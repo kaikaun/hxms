@@ -15,3 +15,39 @@ $ time ./preprocess -c Testset_DT.mzXML Testset_DT.csv
 real	0m1.191s
 user	0m1.140s
 sys	0m0.020s
+
+$ time ./readtest RI91-244_C_UD_even_DT.csv
+
+real	0m15.427s
+user	0m15.300s
+sys	0m0.080s
+
+$ time ./readtest RI91-244_C_UD_odd_DT.csv
+
+real	0m15.694s
+user	0m15.370s
+sys	0m0.150s
+
+$ time ./readtest Testset_DT.csv
+
+real	0m0.441s
+user	0m0.440s
+sys	0m0.000s
+
+$ time ./cluster RI91-244_C_UD_even_DT.csv
+
+real	0m17.399s
+user	0m15.950s
+sys	0m1.370s
+
+$ time ./cluster RI91-244_C_UD_odd_DT.csv
+
+real	0m17.428s
+user	0m15.810s
+sys	0m1.540s
+
+$ time ./cluster Testset_DT.csv
+
+real	0m0.465s
+user	0m0.450s
+sys	0m0.010s
