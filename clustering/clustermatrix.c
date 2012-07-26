@@ -45,6 +45,8 @@ int main(int argc, char** argv)
 	for(int a = 0; a<N_FLAG; ++a) flags[a]=a;
 	
 	infile = fopen(argv[1],"r");
+	if (infile == NULL)
+		infox("Cannot open input file", -2);
 	double current_RT = -1;
 	int RT_step = N_SCANS/3;
 	while(fgets(line,BUFLEN,infile)!=NULL) {
