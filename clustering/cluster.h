@@ -2,6 +2,7 @@
 
 #define N_SCANS 500
 #define N_MZPOINTS 100000
+#define N_FLAG 10000
 
 typedef struct {
 	double mz, I;

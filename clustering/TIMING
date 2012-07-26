@@ -51,3 +51,21 @@ $ time ./cluster Testset_DT.csv
 real	0m0.465s
 user	0m0.450s
 sys	0m0.010s
+
+$ time ./clustermatrix RI91-244_C_UD_even_DT.csv
+
+real	0m16.260s
+user	0m15.840s
+sys	0m0.370s
+
+$ time ./clustermatrix RI91-244_C_UD_odd_DT.csv
+
+real	0m16.104s
+user	0m15.680s
+sys	0m0.380s
+
+$ time ./clustermatrix Testset_DT.csv
+
+real	0m0.892s
+user	0m0.540s
+sys	0m0.350s

@@ -148,8 +148,10 @@ int main(int argc, char** argv)
 	FILE *infile;
 	char line [BUFLEN] = {'\0'};
 	Spectrum spec;
+	int clusters[N_FLAG];
 	
 	constructSpectrum(&spec);
+	for(int a = 0; a<N_FLAG; ++a) clusters[a]=a;
 	
 	infile = fopen(argv[1],"r");
 	while(fgets(line,BUFLEN,infile)!=NULL) {
@@ -159,15 +161,16 @@ int main(int argc, char** argv)
 			addpointtoSpectrum(&spec, RT, mz, I);
 	}
 	fclose(infile);
-	
+
 	optimizeSpectrum(&spec);
 
 	// Print out a summary of spec
-	for(int a=0; a<spec.len; ++a){
+	/* for(int a=0; a<spec.len; ++a){
 		printf("Scan %d: RT %f, %u points\n", a, spec.scans[a].RT, spec.scans[a].len);
-	}
+	} */
 
 	
+
 	destructSpectrum(&spec);
 	return 0;
 }
