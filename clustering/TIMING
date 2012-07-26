@@ -1,0 +1,17 @@
+$ time ./preprocess -c RI91-244_C_UD_even_DT.mzXML RI91-244_C_UD_even_DT.csv
+
+real	0m37.144s
+user	0m35.380s
+sys	0m0.700s
+
+$ time ./preprocess -c RI91-244_C_UD_odd_DT.mzXML RI91-244_C_UD_odd_DT.csv
+
+real	0m44.476s
+user	0m42.410s
+sys	0m0.830s
+
+$ time ./preprocess -c Testset_DT.mzXML Testset_DT.csv
+
+real	0m1.191s
+user	0m1.140s
+sys	0m0.020s
