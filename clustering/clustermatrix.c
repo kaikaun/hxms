@@ -23,17 +23,17 @@ int main(int argc, char** argv)
 	FILE *infile;
 	char line [BUFLEN] = {'\0'};
 	Point *points;
-	int scan_index = N_SCANS;
-	int mz_index = 0;
-	int clusters[N_FLAG];
+	int scan_index = N_SCANS, mz_index = 0;
+	int flags[N_FLAG], current_flag = 0;
 	
 	int total_scans = 0; //DEBUG
 	
 	points = pointmatrix(N_SCANS, N_MZPOINTS);
-	for(int a = 0; a<N_FLAG; ++a) clusters[a]=a;
+	for(int a = 0; a<N_FLAG; ++a) flags[a]=a;
 	
 	infile = fopen(argv[1],"r");
 	double curr_RT = -1;
+	int RT_step = N_SCANS/3;
 	while(fgets(line,BUFLEN,infile)!=NULL) {
 		double RT, mz, I;
 		
@@ -48,8 +48,16 @@ int main(int argc, char** argv)
 				if (scan_index >= N_SCANS) {
 					printf("Resetting\n"); //DEBUG
 					
-					memset(points, 0, N_SCANS*N_MZPOINTS*sizeof(Point));
-					scan_index = 0;
+					// Reset to 0
+					/* memset(points, 0, N_SCANS*N_MZPOINTS*sizeof(Point));
+					scan_index = 0; */
+					
+					// Reset by RT_step
+					memmove(points, &points[RT_step*N_MZPOINTS], 
+						(N_SCANS-RT_step)*N_MZPOINTS*sizeof(Point));
+					memset(&points[(N_SCANS-RT_step)*N_MZPOINTS],0,
+						RT_step*N_MZPOINTS*sizeof(Point));
+					scan_index = N_SCANS-RT_step;
 				}
 				mz_index = 0;
 				curr_RT = RT;

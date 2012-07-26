@@ -148,10 +148,10 @@ int main(int argc, char** argv)
 	FILE *infile;
 	char line [BUFLEN] = {'\0'};
 	Spectrum spec;
-	int clusters[N_FLAG];
+	int flags[N_FLAG], current_flag = 0;
 	
 	constructSpectrum(&spec);
-	for(int a = 0; a<N_FLAG; ++a) clusters[a]=a;
+	for(int a = 0; a<N_FLAG; ++a) flags[a]=a;
 	
 	infile = fopen(argv[1],"r");
 	while(fgets(line,BUFLEN,infile)!=NULL) {

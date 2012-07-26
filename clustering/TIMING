@@ -53,19 +53,45 @@ user	0m0.450s
 sys	0m0.010s
 
 $ time ./clustermatrix RI91-244_C_UD_even_DT.csv
+(Full reset)
 
 real	0m16.260s
 user	0m15.840s
 sys	0m0.370s
 
 $ time ./clustermatrix RI91-244_C_UD_odd_DT.csv
+(Full reset)
 
 real	0m16.104s
 user	0m15.680s
 sys	0m0.380s
 
 $ time ./clustermatrix Testset_DT.csv
+(Full reset)
 
 real	0m0.892s
 user	0m0.540s
 sys	0m0.350s
+
+$ time ./clustermatrix RI91-244_C_UD_even_DT.csv
+(2/3 reset)
+
+real	0m17.080s
+user	0m16.580s
+sys	0m0.450s
+
+$ time ./clustermatrix RI91-244_C_UD_odd_DT.csv
+(2/3 reset)
+
+real	0m16.984s
+user	0m16.420s
+sys	0m0.520s
+
+$ time ./clustermatrix Testset_DT.csv
+(2/3 reset)
+
+real	0m1.085s
+user	0m0.730s
+sys	0m0.350s
+
+
