@@ -2,24 +2,44 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "cluster.h"
 
-#define BUFLEN 300   // Size of line buffer during file reading
-#define RT_INIT 200  // Initial number of scans allocated in a spectrum
-#define RT_INC 100   // Number of scans to expand by when a spectrum fills up
-#define PT_INIT 2000 // Initial number of points allocated in a scan
-#define PT_INC 1000  // Number of points to expand by when a scan fills up
+#define BUFLEN 300    // Size of line buffer during file reading
+#define RT_INIT 200   // Initial number of scans allocated in a spectrum
+#define RT_INC 100    // Number of scans to expand by when a spectrum fills up
+#define PT_INIT 2000  // Initial number of points allocated in a scan
+#define PT_INC 1000   // Number of points to expand by when a scan fills up
+#define NBBUFLEN 100  // Size of neighbour buffer during neighbour search
 
-typedef struct {
+#define DEFAULT_RT_DIST 0.8
+#define DEFAULT_MZ_DIST 0.05
+#define DEFAULT_MIN_NB  3
+
+// Command line arguments
+double RT_dist = DEFAULT_RT_DIST, MZ_dist = DEFAULT_MZ_DIST;
+int min_nb = DEFAULT_MIN_NB;
+FILE *infile = NULL, *outfile = NULL;
+
+typedef struct Scan Scan;
+struct Scan {
 	double RT;
-	unsigned int len, alloc; // Current number and allocated memory for points
+	Scan *lo_nb, *hi_nb; // Pointers to lowest and highest neighbouring scans
+	size_t len, alloc; // Current number and allocated memory for points
 	Point *points; // Pointer to allocated array of Points
-} Scan;
+};
 
-typedef struct {
-	unsigned int len, alloc; // Current number and allocated memory for scans
-	Scan *scans; // Pointer to allocated array of Scans
-} Spectrum;
+typedef struct Spectrum Spectrum;
+struct Spectrum {
+	size_t len, alloc;   // Current number and allocated memory for scans
+	Scan *scans;         // Pointer to allocated array of Scans
+};
+
+typedef struct Neighbour Neighbour;
+struct Neighbour {
+	Scan *scan;
+	Point *point;
+};
 
 // Adds a point to a scan
 void addpointtoScan(Scan *scan, float mz, float I) {
@@ -40,6 +60,8 @@ void addpointtoScan(Scan *scan, float mz, float I) {
 // Initializes a scan (constructor)
 void constructScan(Scan *scan, double RT) {
 	scan->RT = RT;
+	scan->lo_nb = NULL;
+	scan->hi_nb = NULL;
 	scan->len = 0;
 	scan->alloc = PT_INIT;
 	scan->points = malloc(scan->alloc*sizeof(Point));
@@ -101,14 +123,14 @@ void destructSpectrum(Spectrum *spec) {
 	free(spec->scans);
 }
 
-// Compare points by mz (qsort comparator)
+// Compare points by mz (qsort and bsearch comparator)
 int compPoint ( const void *Point1, const void *Point2 ) {
 	if (((Point*)Point1)->mz > ((Point*)Point2)->mz) return 1;
 	if (((Point*)Point1)->mz < ((Point*)Point2)->mz) return -1;
 	return 0;
 }
 
-// Trims off unused allocated memory and sorts points in a scan
+// Trim unused memory and sort points in a scan
 void optimizeScan(Scan *scan) {
 	scan->alloc = scan->len;
 	scan->points = realloc(scan->points,scan->alloc*sizeof(Point));
@@ -117,14 +139,21 @@ void optimizeScan(Scan *scan) {
 	qsort(scan->points, scan->len, sizeof(Point), compPoint);
 }
 
-// Compare scans by RT (qsort comparator)
+// Compare scans by RT (qsort and bsearch comparator)
 int compScan ( const void *Scan1, const void *Scan2 ) {
 	if (((Scan*)Scan1)->RT > ((Scan*)Scan2)->RT) return 1;
 	if (((Scan*)Scan1)->RT < ((Scan*)Scan2)->RT) return -1;
 	return 0;
 }
 
-// Trims off unused allocated memory and sorts scans in a spectrum
+// Compare double to scan RT (qsort and bsearch comparator)
+int compRT ( const void * pkey, const void * pelem ) {
+	if (*(double*)pkey > ((Scan*)pelem)->RT) return 1;
+	if (*(double*)pkey < ((Scan*)pelem)->RT) return -1;
+	return 0;
+}
+
+// Trim unused memory, sort scans and calculate neighbours in a spectrum
 void optimizeSpectrum(Spectrum *spec) {
 	spec->alloc = spec->len;
 	spec->scans = realloc(spec->scans,spec->alloc*sizeof(Scan));
@@ -132,23 +161,79 @@ void optimizeSpectrum(Spectrum *spec) {
 		infox ("Couldn't trim scans array.", -1);
 	qsort(spec->scans, spec->len, sizeof(Scan), compScan);
 	
-	for(int a=0; a<spec->len ;++a)
+	for(int a=0; a<spec->len ;++a) {
+		double lo_RT = spec->scans[a].RT - RT_dist;
+		double hi_RT = spec->scans[a].RT + RT_dist;
+		
+		spec->scans[a].lo_nb = bsearch2(&lo_RT, &(spec->scans[0]), a+1, 
+										sizeof(Scan), compScan, 1);
+		if (spec->scans[a].lo_nb == NULL)
+			infox ("Couldn't find low scan neighbour.", -5);
+		spec->scans[a].lo_nb = bsearch2(&hi_RT, &(spec->scans[a]), spec->len-a, 
+										sizeof(Scan), compScan, -1);
+		if (spec->scans[a].hi_nb == NULL)
+			infox ("Couldn't find high scan neighbour.", -5);
 		optimizeScan(&(spec->scans[a]));
+	}
 }
 
-// Comparison function for binary search
-/* int compRT ( const void * pkey, const void * pelem ) {
-	if (*(float*)pkey > (Scan*)pelem->RT) return 1;
-	if (*(float*)pkey < (Scan*)pelem->RT) return -1;
-	return 0;
-} */
+// Parse and validate command line, storing parameters and opening files
+void parse_command_line(int argc, char** argv) {
+	int opt;
+
+	while ((opt = getopt (argc, argv, "t:s:c:l:v:")) != -1) {
+		switch (opt) {
+			case 't':
+				RT_dist = atof(optarg);
+				break;
+			case 'm':
+				MZ_dist = atof(optarg);
+				break;
+			case 'n':
+				min_nb = atoi(optarg);
+				break;
+			case '?':
+			default:
+				break;
+		}
+	}
+
+	if (argc-optind != 2) {
+		// Print usage information and abort if too few or too many parameters
+		printf("Usage: %s [flags] input.csv output.csv\n",argv[0]);
+		printf("\n");
+		printf("Flags: -t <RT> Maximum RT distance in s (default %.3f)\n", DEFAULT_RT_DIST);
+		printf("       -m <mz> Maximum m/z distance in ue (default %.3f)\n", DEFAULT_MZ_DIST);
+		printf("       -n <nb> Minimum number of neighbours (default %d)\n", DEFAULT_MIN_NB);
+		exit (1);
+	} else {
+		infile = fopen(argv[optind],"r");
+		if (infile == NULL)
+			infox("Couldn't open input file.", -2);
+		outfile = fopen(argv[++optind],"w");
+		if (outfile == NULL)
+			infox("Couldn't open output file.", -2);
+	}
+}
+
+// Assign cluster numbers in a spectrum
+void clusterSpectrum(Spectrum *spec, int *flags) {
+	int current_flag = 0;
+	
+	for(int a=0; a<spec->len; ++a) {
+		for(int b=0; b<spec->scans[a].len; ++b) {
+		
+		
+		}
+		
+	}
+}
 
 int main(int argc, char** argv)
 {
-	FILE *infile;
 	char line [BUFLEN] = {'\0'};
 	Spectrum spec;
-	int flags[N_FLAG], current_flag = 0;
+	int flags[N_FLAG];
 	
 	constructSpectrum(&spec);
 	for(int a = 0; a<N_FLAG; ++a) flags[a]=a;
@@ -169,7 +254,7 @@ int main(int argc, char** argv)
 		printf("Scan %d: RT %f, %u points\n", a, spec.scans[a].RT, spec.scans[a].len);
 	} */
 
-	
+	clusterSpectrum(&spec, flags);
 
 	destructSpectrum(&spec);
 	return 0;
