@@ -12,14 +12,13 @@
 int main(int argc, char** argv)
 {
 	char line [BUFLEN] = {'\0'};
-	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0;
+	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0, total_scans = 0;
 	Flag flags[N_FLAG];
 	int RT_step = N_SCANS/3;
 	int a, b;
 	FILE *infile;
 	Point **points;
 
-	//int total_scans = 0; //DEBUG
 	int line_ctr = 0; //DEBUG
 
 	// Open input file
@@ -29,12 +28,12 @@ int main(int argc, char** argv)
 	}
 	infile = fopen(argv[1],"r");
 	if (infile == NULL)
-		infox("Cannot open input file", -2);
+		infox("Cannot open input file", -2, __FILE__, __LINE__);
 
-	// Initialize 
+	// Initialize matrix and flags
 	points = Pointmatrix(N_SCANS, N_MZPOINTS);
 	if (!points) 
-		infox ("Couldn't create matrix.", -1);
+		infox ("Couldn't create matrix.", -1, __FILE__, __LINE__);
 	for(a = 0; a<N_FLAG; ++a) {
 		flags[a].color = a;
 		flags[a].last_seen = -1;
@@ -45,32 +44,28 @@ int main(int argc, char** argv)
 		double RT, mz, I;
 		int ret = sscanf (line, " %*d  %lf  %lf  %lf", &RT, &mz, &I);
 
-		line_ctr++; //DEBUG
+		if (ret != 3) continue; //should we warn the user?
+		if (I < I_MIN) continue;
 
-		if (ret != 3) {
-			continue; //should we warn the user?
-		}
-
-		if ( I < I_MIN ) continue;
-		if ( ! (line_ctr%1000) ) printf("line %d, RT %f, %d points\n", line_ctr,current_RT,mz_idx); //DEBUG
+		if (!(++line_ctr%1000))printf("line %d, RT %f, %d points\n",line_ctr,current_RT,mz_idx); //DEBUG
 
 		// Assume that points in CSV are already sorted by RT, and move to next
 		// scan if RT changes
 		if (RT != current_RT) {
-			// total_scans++; //DEBUG
+			total_scans++;
 			scan_idx++;
 			if (scan_idx >= N_SCANS) {
-				printf("Stepping\n"); //DEBUG
+				// printf("Stepping\n"); //DEBUG
 				scan_idx = stepPointmatrix(points, N_SCANS, N_MZPOINTS, RT_step);
 				if (scan_idx < 0)
-					infox ("Couldn't step matrix.", -4);
+					infox ("Couldn't step matrix.", -4, __FILE__, __LINE__);
 			}
 			mz_idx = 0;
 			current_RT = RT;
 		}
 
 		if (mz_idx >= N_MZPOINTS)
-			infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3);
+			infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3, __FILE__, __LINE__);
 
 		points[scan_idx][mz_idx].mz = mz;
 		points[scan_idx][mz_idx].I = I;
@@ -85,9 +80,10 @@ int main(int argc, char** argv)
 				if (points[a][b].mz - mz >  MZ_DIST) break;
 
 				if (!points[a][b].cluster_flag)
-					infox("Neighbour has no cluster!", -10);
+					infox("Neighbour has no cluster!", -10, __FILE__, __LINE__);
 
 				if (!points[scan_idx][mz_idx].cluster_flag) {
+					points[a][b].cluster_flag->last_seen = total_scans;
 					points[scan_idx][mz_idx].cluster_flag =
 						points[a][b].cluster_flag;
 				} else {
@@ -101,14 +97,16 @@ int main(int argc, char** argv)
 		}
 		if (!points[scan_idx][mz_idx].cluster_flag) {
 			points[scan_idx][mz_idx].cluster_flag = &flags[current_flag];
+			flags[current_flag].last_seen = total_scans;
 			current_flag = getnextFlag(flags, N_FLAG, current_flag);
 			if (current_flag < 0)
-				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3);
+				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3, 
+						__FILE__, __LINE__);
 		}
 		mz_idx++;
 	}
 
-	printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
+	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
 	fclose(infile);
 	freePointmatrix(points);
 	return 0;
