@@ -1,19 +1,13 @@
 CC      = gcc
-CFLAGS  = -std=gnu99 -Wall
+CFLAGS  = -std=gnu99 -Wall -O3
 LDFLAGS = 
 
-SOURCES = clustermatrix.c cluster.c cluster.h
+SOURCES = clustermatrix.c cluster.h
 
-all: clustermatrix cluster
+all: clustermatrix
 
 clustermatrix: clustermatrix.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)  
- 
-cluster: cluster.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-
-readtest: readtest.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 .c.o:
 	$(CC) $(CFLAGS) -c $< $(INCLUDE)
@@ -21,4 +15,4 @@ readtest: readtest.o
 clean:
 	rm -f *.o
 cleanall:
-	rm -f clustermatrix cluster readtest *.o
+	rm -f clustermatrix *.o

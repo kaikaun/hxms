@@ -1,4 +1,8 @@
-//      cluster.h
+// cluster.h
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define N_SCANS 500
 #define N_MZPOINTS 100000
@@ -16,46 +20,33 @@ int infox (const char *errmsg, int exitval) {
 	exit(exitval);
 }
 
-/* Binary search on sorted array with unique keys, using same parameters as 
-   bsearch plus mode: 2 = strictly greater than, 1 = greater than or equal
-                     -2 = strictly less than,   -1 = less than or equal
-                      0 = strictly equal (bsearch behaviour) */
-void* bsearch2(const void* key, const void* base, size_t num, size_t size,
-               int (*compare)(const void*, const void*), signed char mode ) {
+// Construct Pointmatrix, returning pointer to matrix or NULL for error
+Point** Pointmatrix(int dim1, int dim2) {
+	Point **matrix;
+	int a;
 
-	int min = 0, max = num-1;
+	if (dim1<=0) return NULL;
+	if (dim2<=0) return NULL;
+	matrix = malloc(dim1*sizeof(Point*));
+	if (!matrix) return NULL;
+	matrix[0] = calloc(dim1*dim2,sizeof(Point));
+	if (!matrix[0]) return NULL;
+	for(a = 1; a < dim1; ++a) matrix[a] = matrix[a-1] + dim2;
 
-	while (max >= min) {
-		int mid = (min + max) >> 1;
-		int com = compare(key, base + mid*size);
-		
-		if (com < 0) max = mid - 1;
-		else if (com > 0) min = mid + 1;
-		else {
-			switch (mode) {
-				case 2:
-					if (mid >= num-1) return NULL;
-					++mid;
-					break;
-				case -2:
-					if (mid <= 0) return NULL;
-					--mid;
-					break;
-			}
-			return (void*)(base + mid*size);
-		}
-	}
-	switch (mode) {
-		case 2:
-		case 1:
-			if (min >= num) return NULL;
-			return (void*)(base + min*size);
-		case -2:
-		case -1:
-			if (max < 0) return NULL;
-			return (void*)(base + max*size);
-		case 0:
-		default:
-			return NULL;
-	}
+	return matrix;
+}
+
+// Free Pointmatrix
+void freePointmatrix(Point **matrix) {
+	free(matrix[0]);
+	free(matrix);
+}
+
+// Move pointmatrix up by step, returning the new tail or -1 for error
+int stepPointmatrix(Point **matrix, int dim1, int dim2, int step) {
+	if (step<=0) return -1;
+	if (step>dim1) return -1;
+	memmove(matrix[0], matrix[step], (dim1-step)*dim2*sizeof(Point));
+	memset(matrix[dim1-step],0, step*dim2*sizeof(Point));
+	return dim1-step;
 }
