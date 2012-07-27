@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "../cluster.h"
 
 #define BUFLEN 300    // Size of line buffer during file reading
 #define RT_INIT 200   // Initial number of scans allocated in a spectrum
@@ -19,12 +20,6 @@
 double RT_dist = DEFAULT_RT_DIST, MZ_dist = DEFAULT_MZ_DIST;
 int min_nb = DEFAULT_MIN_NB;
 FILE *infile = NULL, *outfile = NULL;
-
-typedef struct Point Point;
-struct Point {
-	double mz, I;
-	int *cluster_flag; // Pointer to cluster point belongs to (NULL if none)
-};
 
 typedef struct Scan Scan;
 struct Scan {
@@ -318,12 +313,15 @@ int main(int argc, char** argv)
 	}
 	fclose(infile);
 
-	optimizeSpectrum(&spec);
+	// optimizeSpectrum(&spec);
 
 	// Print out a summary of spec
-	/* for(int a=0; a<spec.len; ++a){
-		printf("Scan %d: RT %f, %u points\n", a, spec.scans[a].RT, spec.scans[a].len);
-	} */
+	int max = 0;
+	for(int a=0; a<spec.len; ++a){
+		if (spec.scans[a].len > spec.scans[max].len) max = a;
+		printf("Scan %d: RT %f, %d points\n", a, spec.scans[a].RT, spec.scans[a].len);
+	}
+	printf("Max - Scan %d: RT %f, %d points\n", max, spec.scans[max].RT, spec.scans[max].len);
 
 	//clusterSpectrum(&spec, flags);
 

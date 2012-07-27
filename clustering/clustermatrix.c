@@ -7,7 +7,7 @@
 #define BUFLEN 300
 
 #define MZ_DIST 0.05
-#define I_MIN 5
+#define I_MIN 4
 
 int main(int argc, char** argv)
 {
@@ -28,11 +28,13 @@ int main(int argc, char** argv)
 		exit (1);
 	}
 	infile = fopen(argv[1],"r");
-	if (infile == NULL) infox("Cannot open input file", -2);
+	if (infile == NULL)
+		infox("Cannot open input file", -2);
 
 	// Initialize 
 	points = Pointmatrix(N_SCANS, N_MZPOINTS);
-	if (!points) infox ("Couldn't create matrix.", -1);
+	if (!points) 
+		infox ("Couldn't create matrix.", -1);
 	for(a = 0; a<N_FLAG; ++a) flags[a]=a;
 
 	double current_RT = -1;
@@ -57,13 +59,15 @@ int main(int argc, char** argv)
 			if (scan_idx >= N_SCANS) {
 				printf("Stepping\n"); //DEBUG
 				scan_idx = stepPointmatrix(points, N_SCANS, N_MZPOINTS, RT_step);
-				if (scan_idx < 0) infox ("Couldn't step matrix.", -4);
+				if (scan_idx < 0)
+					infox ("Couldn't step matrix.", -4);
 			}
 			mz_idx = 0;
 			current_RT = RT;
 		}
 
-		if (mz_idx >= N_MZPOINTS) infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3);
+		if (mz_idx >= N_MZPOINTS)
+			infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3);
 
 		points[scan_idx][mz_idx].mz = mz;
 		points[scan_idx][mz_idx].I = I;
@@ -73,11 +77,12 @@ int main(int argc, char** argv)
 			if (a < 0) break;
 
 			for (b = 0; b < N_MZPOINTS; ++b) {
-				if (!points[a][b].mz) continue;
+				if (!points[a][b].mz) break;
 				if (points[a][b].mz - mz < -MZ_DIST) continue;
 				if (points[a][b].mz - mz >  MZ_DIST) break;
 
-				if (!points[a][b].cluster_flag) infox("Neighbour has no cluster!", -10);
+				if (!points[a][b].cluster_flag)
+					infox("Neighbour has no cluster!", -10);
 
 				if (!points[scan_idx][mz_idx].cluster_flag) {
 					points[scan_idx][mz_idx].cluster_flag =
@@ -92,7 +97,8 @@ int main(int argc, char** argv)
 			if (two_neighbours) break;
 		}
 		if (!points[scan_idx][mz_idx].cluster_flag) {
-			if (current_flag >= N_FLAG) infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3);
+			if (current_flag >= N_FLAG) 
+				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3);
 
 			points[scan_idx][mz_idx].cluster_flag = &flags[current_flag];
 			current_flag++;

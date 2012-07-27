@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define N_SCANS 500
-#define N_MZPOINTS 100000
+#define N_MZPOINTS 20000
 #define N_FLAG 100000
 #define N_PREV 3
 
