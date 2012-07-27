@@ -1,6 +1,10 @@
                      RI91-244_C_UD_even_DT.csv  RI91-244_C_UD_odd_DT.csv  Testset_DT.csv
-preprocessing        0m37.144s                  0m44.476s                 0m1.191s
+preprocess           0m37.144s                  0m44.476s                 0m1.191s
 readtest             0m15.427s                  0m15.694s                 0m0.441s
 matrix (full reset)  0m16.260s                  0m16.104s                 0m0.892s
 matrix (2/3 reset)   0m17.080s                  0m16.984s                 0m1.085s
 matrix (2/3+cluster) 39m43.903s                 40m4.357s                 0m17.599s
+
+                     C_UD_even_DT_4+.csv        C_UD_odd_DT_4+.csv        Testset_DT_4+.csv
+preprocess (-i 4)    10.49s                     11.15s                    0.28
+

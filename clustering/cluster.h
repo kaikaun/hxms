@@ -10,14 +10,36 @@
 #define N_PREV 3
 
 typedef struct {
+	int color, last_seen;
+} Flag;
+
+typedef struct {
 	double mz, I;
-	int *cluster_flag; // Pointer to cluster point belongs to (NULL if none)
+	Flag *cluster_flag; // Pointer to cluster point belongs to (NULL if none)
 } Point;
 
 // Print error message and abort program with error exit value
 int infox (const char *errmsg, int exitval) {
 	fprintf(stderr, "%s\nExiting at %s:%d.\n", errmsg, __FILE__, __LINE__);
 	exit(exitval);
+}
+
+// Return index to next available flag in an array of flags or <0 for error
+int getnextFlag(Flag flags[], int len, int current) {
+	int next;
+
+	// Invalid input
+	if (len<=0) return -1;
+	if (current<0) return -1;
+	if (current>=len) return -1;
+
+	next = current;
+	if (++next >= len) next -= len;
+	while (next != current) {
+		if (flags[next].last_seen == -1) return next;
+		if (++next >= len) next -= len;
+	}
+	return -2; // No available flag found
 }
 
 // Construct Pointmatrix, returning pointer to matrix or NULL for error
@@ -50,3 +72,5 @@ int stepPointmatrix(Point **matrix, int dim1, int dim2, int step) {
 	memset(matrix[dim1-step],0, step*dim2*sizeof(Point));
 	return dim1-step;
 }
+
+

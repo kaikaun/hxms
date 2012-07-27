@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "../cluster.h"
 
 #define BUFLEN 300    // Size of line buffer during file reading
 #define RT_INIT 200   // Initial number of scans allocated in a spectrum
@@ -11,6 +10,7 @@
 #define PT_INIT 2000  // Initial number of points allocated in a scan
 #define PT_INC 1000   // Number of points to expand by when a scan fills up
 #define NBBUFLEN 100  // Size of neighbour buffer during neighbour search
+#define N_FLAG 10000
 
 #define DEFAULT_RT_DIST 0.8
 #define DEFAULT_MZ_DIST 0.05
@@ -20,6 +20,12 @@
 double RT_dist = DEFAULT_RT_DIST, MZ_dist = DEFAULT_MZ_DIST;
 int min_nb = DEFAULT_MIN_NB;
 FILE *infile = NULL, *outfile = NULL;
+
+typedef struct Point Point;
+struct Point {
+	double mz, I;
+	int *cluster_flag; // Pointer to cluster point belongs to (NULL if none)
+};
 
 typedef struct Scan Scan;
 struct Scan {
@@ -40,6 +46,12 @@ struct Neighbour {
 	Scan *scan;
 	Point *point;
 };
+
+// Print error message and abort program with error exit value
+int infox (const char *errmsg, int exitval) {
+	fprintf(stderr, "%s\nExiting at %s:%d.\n", errmsg, __FILE__, __LINE__);
+	exit(exitval);
+}
 
 /* Binary search on sorted array with unique keys, using same parameters as 
    bsearch plus mode: 2 = strictly greater than, 1 = greater than or equal

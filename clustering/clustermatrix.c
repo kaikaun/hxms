@@ -12,8 +12,8 @@
 int main(int argc, char** argv)
 {
 	char line [BUFLEN] = {'\0'};
-	int scan_idx = N_SCANS, mz_idx = 0;
-	int flags[N_FLAG], current_flag = 0;
+	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0;
+	Flag flags[N_FLAG];
 	int RT_step = N_SCANS/3;
 	int a, b;
 	FILE *infile;
@@ -35,7 +35,10 @@ int main(int argc, char** argv)
 	points = Pointmatrix(N_SCANS, N_MZPOINTS);
 	if (!points) 
 		infox ("Couldn't create matrix.", -1);
-	for(a = 0; a<N_FLAG; ++a) flags[a]=a;
+	for(a = 0; a<N_FLAG; ++a) {
+		flags[a].color = a;
+		flags[a].last_seen = -1;
+	}
 
 	double current_RT = -1;
 	while(fgets(line,BUFLEN,infile)!=NULL) {
@@ -97,11 +100,10 @@ int main(int argc, char** argv)
 			if (two_neighbours) break;
 		}
 		if (!points[scan_idx][mz_idx].cluster_flag) {
-			if (current_flag >= N_FLAG) 
-				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3);
-
 			points[scan_idx][mz_idx].cluster_flag = &flags[current_flag];
-			current_flag++;
+			current_flag = getnextFlag(flags, N_FLAG, current_flag);
+			if (current_flag < 0)
+				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3);
 		}
 		mz_idx++;
 	}
