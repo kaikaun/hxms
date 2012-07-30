@@ -6,9 +6,9 @@ INCLUDE =
 clmSOURCES = clm_main.c clm_utils.c clm_points.c clm_flags.c
 clmOBJECTS = $(clmSOURCES:.c=.o)
 
-all: clustermatrix
+all: clm
 
-clustermatrix: $(clmOBJECTS)
+clm: $(clmOBJECTS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)  
 
 .c.o:
@@ -17,4 +17,4 @@ clustermatrix: $(clmOBJECTS)
 clean:
 	rm -f *.o
 cleanall:
-	rm -f clustermatrix *.o
+	rm -f clm *.o
