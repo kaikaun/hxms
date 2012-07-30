@@ -1,16 +1,18 @@
 CC      = gcc
-CFLAGS  = -std=gnu99 -Wall -O3
+CFLAGS  = -Wall -O3
 LDFLAGS = 
+INCLUDE = 
 
-SOURCES = clustermatrix.c cluster.h
+clmSOURCES = clm_main.c clm_utils.c clm_points.c clm_flags.c
+clmOBJECTS = $(clmSOURCES:.c=.o)
 
 all: clustermatrix
 
-clustermatrix: clustermatrix.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)  
+clustermatrix: $(clmOBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)  
 
 .c.o:
-	$(CC) $(CFLAGS) -c $< $(INCLUDE)
+	$(CC) $(CFLAGS) -c -o $@ $< $(INCLUDE)
 
 clean:
 	rm -f *.o

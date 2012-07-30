@@ -1,19 +1,22 @@
 CC      = gcc
-CFLAGS  = -std=gnu99 -Wall -O3
+CFLAGS  = -Wall -O3
 LDFLAGS = 
+VPATH   = ../
+INCLUDE = -I ../
 
-SOURCES = unittest.c readtest.c ../cluster.h
+utSOURCES = unittest.c clm_utils.c clm_points.c clm_flags.c 
+utOBJECTS = $(utSOURCES:.c=.o)
 
 all: unittest readtest 
 
-unittest: unittest.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+unittest: $(utOBJECTS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 readtest: readtest.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)  
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)  
 
 .c.o:
-	$(CC) $(CFLAGS) -c $< $(INCLUDE)
+	$(CC) $(CFLAGS) -c -o $@ $< $(INCLUDE)
 
 clean:
 	rm -f *.o

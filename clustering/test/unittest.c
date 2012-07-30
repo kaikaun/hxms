@@ -1,7 +1,7 @@
 // unittest.c
 
 #include <stdio.h>
-#include "../cluster.h"
+#include "clm.h"
 
 #define BUFLEN 100
 
@@ -123,17 +123,8 @@ void testgetnextFlag(Flag *flags, int len, int curr) {
 			infox("getnextFlag succeeded with no available flag", -11,
 					__FILE__, __LINE__);
 
-		// Check for failure when current is the only available flag
-		flags[curr].last_seen = -1;
-		next = getnextFlag(flags,len,curr);
-		if (next >= 0)
-			infox("getnextFlag wrapped back to current flag", -12,
-					__FILE__, __LINE__);
-
-		// Check that every other flag can be found
-		a = curr;
-		if (--a < 0) a+=len;
-		while (a != curr) {
+		// Check that an available flag can be found at any position from curr
+		for (a=0;a<len;++a) {
 			flags[a].last_seen = -1;
 			next = getnextFlag(flags,len,curr);
 			if (next != a) {
@@ -141,14 +132,14 @@ void testgetnextFlag(Flag *flags, int len, int curr) {
 					len, curr, next, a);
 				infox(errbuf, -13, __FILE__, __LINE__);
 			}
-			if (--a < 0) a+=len;
+			flags[a].last_seen = 0;
 		}
 	}
 	printf("getnextFlag(f,%d,%d) passed\n",len,curr);
 }
 
 // Dummy output function for freshenFlags that does nothing
-int discard(int color, int last_seen) {
+int discard(Flag oldflag) {
 	return 0;
 }
 
