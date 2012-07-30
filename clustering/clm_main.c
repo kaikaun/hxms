@@ -95,10 +95,10 @@ int main(int argc, char** argv)
 						*(points[scan_idx][mz_idx].cluster_flag);
 
 					// Check that last_seen is correctly updated
-					if (points[a][b].cluster_flag->last_seen != total_scans; ||
-						points[scan_idx][mz_idx].cluster_flag->last_seen!=
-						total_scans;)
-						infox("last_seen did not update on cluster merge", -10
+					if (points[a][b].cluster_flag->last_seen != total_scans ||
+						points[scan_idx][mz_idx].cluster_flag->last_seen !=
+						total_scans)
+						infox("last_seen did not update on cluster merge", -10,
 								__FILE__, __LINE__);
 
 					two_neighbours = 1;
