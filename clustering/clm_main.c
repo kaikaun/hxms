@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 
 	// Initialize matrix and flags
 	points = Pointmatrix(N_SCANS, N_MZPOINTS);
-	if (!points) 
+	if (!points)
 		infox ("Couldn't create matrix.", -1, __FILE__, __LINE__);
 	for(a = 0; a<N_FLAG; ++a) {
 		flags[a].color = a;
@@ -93,6 +93,14 @@ int main(int argc, char** argv)
 				} else {
 					*(points[a][b].cluster_flag) =
 						*(points[scan_idx][mz_idx].cluster_flag);
+
+					// Check that last_seen is correctly updated
+					if (points[a][b].cluster_flag->last_seen != total_scans; ||
+						points[scan_idx][mz_idx].cluster_flag->last_seen!=
+						total_scans;)
+						infox("last_seen did not update on cluster merge", -10
+								__FILE__, __LINE__);
+
 					two_neighbours = 1;
 					break;
 				}
@@ -104,7 +112,7 @@ int main(int argc, char** argv)
 			flags[current_flag].last_seen = total_scans;
 			current_flag = getnextFlag(flags, N_FLAG, current_flag);
 			if (current_flag < 0)
-				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3, 
+				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3,
 						__FILE__, __LINE__);
 		}
 		mz_idx++;
