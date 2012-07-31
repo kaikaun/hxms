@@ -2,47 +2,53 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "clm.h"
 
 #define BUFLEN 300
 
-// Output function for freshenFlags that simply prints out the old flag
-int printcolor(Flag oldflag) {
-	printf("Color %d: last scan %d\n",oldflag.color,oldflag.last_seen);
-	return 0;
-}
-
 int main(int argc, char** argv)
 {
 	char line [BUFLEN] = {'\0'};
-	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0, total_scans = 0;
-	Flag flags[N_FLAG];
-	int RT_step = N_SCANS/3;
 	int a, b;
+	
 	FILE *infile;
 	Point **points;
+	double RTs[N_SCANS] = {0};
+	Flag flags[N_FLAG], latest[N_SCANS];
 
+	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0, total_scans = 0, tail;
+	int RT_step = N_SCANS/3;
 	int line_ctr = 0; //DEBUG
 
-	// Open input file
-	if ( argc < 2 ) {
-		fprintf (stderr, "Usage: %s <input file (plain text table)>.\n", argv[0]);
+	// Check command line arguments, print usage if wrong
+	if ( argc < 3 ) {
+		fprintf (stderr, "Usage: %s <input table> <output dir>\n", argv[0]);
 		exit (1);
 	}
+
+	// Check output dir exists
+	struct stat st;
+	stat(argv[2],&st);
+	if(!S_ISDIR(st.st_mode))
+		infox("Output dir does not exist", -2, __FILE__, __LINE__);
+
+	// Open input file
 	infile = fopen(argv[1],"r");
 	if (infile == NULL)
 		infox("Cannot open input file", -2, __FILE__, __LINE__);
 
-	// Initialize matrix and flags
+	// Initialize matrix
 	points = Pointmatrix(N_SCANS, N_MZPOINTS);
 	if (!points)
 		infox ("Couldn't create matrix.", -1, __FILE__, __LINE__);
+
+	// Initialize flags;
 	for(a = 0; a<N_FLAG; ++a) {
 		flags[a].color = a;
 		flags[a].last_seen = -1;
 	}
 
-	double current_RT = -1;
 	while(fgets(line,BUFLEN,infile)!=NULL) {
 		double RT, mz, I;
 		int ret = sscanf (line, " %*d  %lf  %lf  %lf", &RT, &mz, &I);
@@ -50,22 +56,37 @@ int main(int argc, char** argv)
 		if (ret != 3) continue; //should we warn the user?
 		if (I < I_MIN) continue;
 
-		if (!(++line_ctr%1000))printf("line %d, RT %f, %d points\n",line_ctr,current_RT,mz_idx); //DEBUG
+		if (!(++line_ctr%1000))printf("line %d, RT %f, %d points\n",line_ctr,RTs[scan_idx],mz_idx); //DEBUG
 
 		// Assume that points in CSV are already sorted by RT, and move to next
-		// scan if RT changes
-		if (RT != current_RT) {
+		// scan if RT changes, stepping if necessary
+		if (RT != RTs[scan_idx]) {
 			total_scans++;
 			scan_idx++;
 			if (scan_idx >= N_SCANS) {
-				// printf("Stepping\n"); //DEBUG
+				//printf("Stepping\n"); //DEBUG
 				scan_idx = stepPointmatrix(points, N_SCANS, N_MZPOINTS, RT_step);
-				if (scan_idx < 0)
+				if(scan_idx < 0)
 					infox ("Couldn't step matrix.", -4, __FILE__, __LINE__);
-				freshenFlags(flags, N_FLAG, total_scans-N_PREV-1, printcolor);
+				if(scan_idx != stepDoubles(RTs, N_SCANS, RT_step))
+					infox ("Couldn't step RTs.", -4, __FILE__, __LINE__);
+
+				//freshenFlags(flags, N_FLAG, total_scans-N_PREV-1, printcolor);
+				int last_scan = total_scans - N_PREV - 1;
+				if (last_scan > 0) {
+					tail = getlatestFlags(flags, N_SCANS, latest);
+					if (tail<=0)
+						infox("Couldn't update last_seen",-5,__FILE__,__LINE__);
+					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, 
+						tail, last_scan, RTs, argv[2]) < 0)
+						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
+					if (clearoldFlags(flags,N_SCANS,latest,tail,last_scan) < 0)
+						infox("Couldn't update flags",-7,__FILE__,__LINE__);
+				}
+				//printf("Stepped\n"); //DEBUG
 			}
 			mz_idx = 0;
-			current_RT = RT;
+			RTs[scan_idx] = RT;
 		}
 
 		if (mz_idx >= N_MZPOINTS)
@@ -118,7 +139,13 @@ int main(int argc, char** argv)
 		mz_idx++;
 	}
 	// Output remaining clusters
-	freshenFlags(flags, N_FLAG, total_scans+(2*N_PREV), printcolor);
+	//freshenFlags(flags, N_FLAG, total_scans+(2*N_PREV), printcolor);
+	tail = getlatestFlags(flags, N_SCANS, latest);
+	if (tail<=0)
+		infox("Couldn't update last_seen",-5,__FILE__,__LINE__);
+	if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail, 
+		(total_scans + N_PREV + 1), RTs, argv[2]) < 0)
+		infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
 	fclose(infile);
