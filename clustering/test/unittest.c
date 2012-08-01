@@ -138,10 +138,82 @@ void testgetnextFlag(Flag *flags, int len, int curr) {
 	printf("getnextFlag(f,%d,%d) passed\n",len,curr);
 }
 
-// Dummy output function for freshenFlags that does nothing
-int discard(Flag oldflag) {
-	return 0;
+// Tests testgetlatestFlags (flag array must be preallocated)
+void testgetlatestFlags(Flag *flags, int len) {
+	char errbuf[BUFLEN];
+	Flag latest[len];
+	int tail;
+	int a,b,c;
+
+	if (len <= 0) {
+		tail = getlatestFlags(flags,len,latest);
+		// Check for failure on invalid parameters
+		if (tail >= 0) {
+			sprintf(errbuf, "len = %d succeeded when it should fail", len);
+			infox(errbuf, -14, __FILE__, __LINE__);
+		}
+	} else {
+		// Initialize flags array
+		for (a=0;a<len;++a) {
+			flags[a].color = a;
+			flags[a].last_seen = -1;
+		}
+
+		// Test to find n unique used flags
+		for (a=0;a<=len;++a) {
+			tail = getlatestFlags(flags,len,latest);
+			if (tail != a) {
+				sprintf(errbuf,"%d latest flags instead of %d",tail,a);
+				infox(errbuf, -15, __FILE__, __LINE__);
+			}
+			for (b=0;b<tail;++b) {
+				if (latest[b].color != latest[b].last_seen)
+					infox("getlatestFlags modified last_seen",-16,__FILE__,
+							__LINE__);
+				for (c=0;c<b;++c) {
+					if (latest[b].color == latest[c].color)
+						infox("getlatestFlags repeated flag",-17,__FILE__,
+								__LINE__);
+				}
+			}
+			if (a<len) flags[a].last_seen = a;
+		}
+
+		// Test to combine n same colored used flags
+		for (a=1;a<len;++a) {
+			flags[a].color = 0;
+
+			tail = getlatestFlags(flags,len,latest);
+			if (tail != len-a) {
+				sprintf(errbuf,"%d latest flags instead of %d", tail, len-a);
+				infox(errbuf, -15, __FILE__, __LINE__);
+			}
+			for (b=0;b<tail;++b) {
+				if (latest[b].color == 0) {
+					if (latest[b].last_seen != a)
+						infox("getlatestFlags merged wrongly", -18, __FILE__,
+								__LINE__);
+				} else if (latest[b].color > a) {
+					if (latest[b].color != latest[b].last_seen)
+						infox("getlatestFlags modified last_seen",-16, __FILE__,
+								__LINE__);
+				} else infox("getlatestFlags modified color", -19, __FILE__,
+								__LINE__);
+				for (c=0;c<b;++c) {
+					if (latest[b].color == latest[c].color)
+						infox("getlatestFlags repeated flag",-17,__FILE__,
+								__LINE__);
+				}
+			}
+		}
+	}
+	printf("getlatestFlag(f,%d,l) passed\n",len);
 }
+
+// Dummy output function for freshenFlags that does nothing
+/* int discard(Flag oldflag) {
+	return 0;
+} */
 
 // Tests freshenFlags (flag array must be preallocated)
 /* void testfreshenFlags(Flag *flags, int len, int scan) {
@@ -249,6 +321,9 @@ int main(int argc, char** argv)
 	testgetnextFlag(flags, len, len);
 	testgetnextFlag(flags, len, 0);
 	testgetnextFlag(flags, len, len-1);
+
+	testgetlatestFlags(flags, -1);
+	testgetlatestFlags(flags, len);
 
 /*	testfreshenFlags(flags, 0, 0);
 	testfreshenFlags(flags, -1, 0);

@@ -32,9 +32,9 @@ int getlatestFlags(const Flag *flags, int len, Flag *latest) {
 	// Invalid arguments
 	if (len <= 0) return -1;
 
-	// Populate latest[] with the latest last_seen for each color
+	// Populate latest[] with the latest last_seen for each used color
 	for (a=0; a<len; ++a) {
-		// if (flags[a].last_seen == -1) continue;
+		if (flags[a].last_seen == -1) continue;
 		for (b=0; b<tail; ++b) {
 			if (flags[a].color == latest[b].color) {
 				if (latest[b].last_seen < flags[a].last_seen)
@@ -42,7 +42,7 @@ int getlatestFlags(const Flag *flags, int len, Flag *latest) {
 				break;
 			}
 		}
-		if (b == tail) latest[tail++] = flags[a]; // Add unseen color to latest
+		if (b >= tail) latest[tail++] = flags[a]; // Add unseen color to latest
 	}
 
 	return tail; // tail == len(latest[])
@@ -70,10 +70,9 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 		if (latest[a].last_seen >= scan) continue;
 
 		// Open file to write the cluster into
-		sprintf(buf,"%s/%05d.clust",dir,latest[a].color);
+		sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
 		outfile = fopen(buf, "w");
 		if (!outfile) {
-			printf("%s\n",buf);
 			return -2; // Could not open file to write cluster to
 		}
 
@@ -124,7 +123,7 @@ int clearoldFlags(Flag *flags, int len, const Flag *latest, int tail, int scan){
 					flags[a].color = ++curr_color;
 					flags[a].last_seen = -1;
 					++cleared;
-				}
+				} else flags[a].last_seen = latest[b].last_seen;
 				break;
 			}
 		}

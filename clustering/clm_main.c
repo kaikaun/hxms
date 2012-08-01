@@ -15,11 +15,11 @@ int main(int argc, char** argv)
 	FILE *infile;
 	Point **points;
 	double RTs[N_SCANS] = {0};
-	Flag flags[N_FLAG], latest[N_SCANS];
+	Flag flags[N_FLAG], latest[N_FLAG];
 
-	int scan_idx = N_SCANS, mz_idx = 0, current_flag = 0, total_scans = 0, tail;
+	int scan_idx = -1, mz_idx = 0, current_flag = 0, total_scans = 0, tail;
 	int RT_step = N_SCANS/3;
-	int line_ctr = 0; //DEBUG
+	//int line_ctr = 0; //DEBUG
 
 	// Check command line arguments, print usage if wrong
 	if ( argc < 3 ) {
@@ -56,7 +56,8 @@ int main(int argc, char** argv)
 		if (ret != 3) continue; //should we warn the user?
 		if (I < I_MIN) continue;
 
-		if (!(++line_ctr%1000))printf("line %d, RT %f, %d points\n",line_ctr,RTs[scan_idx],mz_idx); //DEBUG
+		//if (!(++line_ctr%1000))printf("line %d, scan %d, RT %f, %d points\n",
+		//					line_ctr,total_scans,RTs[scan_idx],mz_idx); //DEBUG
 
 		// Assume that points in CSV are already sorted by RT, and move to next
 		// scan if RT changes, stepping if necessary
@@ -65,32 +66,39 @@ int main(int argc, char** argv)
 			scan_idx++;
 			if (scan_idx >= N_SCANS) {
 				//printf("Stepping\n"); //DEBUG
-				scan_idx = stepPointmatrix(points, N_SCANS, N_MZPOINTS, RT_step);
+				//freshenFlags(flags, N_FLAG, total_scans-N_PREV-1, printcolor);
+				int last_scan = total_scans - N_PREV - 2;
+				if (last_scan > 0) {
+					tail = getlatestFlags(flags, N_FLAG, latest);
+					if (tail <= 0)
+						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
+					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, 
+						tail, last_scan, RTs, argv[2]) < 0)
+						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
+					
+					if (clearoldFlags(flags,N_FLAG,latest,tail,last_scan) < 0)
+						infox("Couldn't update flags",-7,__FILE__,__LINE__);
+					
+					current_flag = getnextFlag(flags, N_FLAG, current_flag);
+					if (current_flag < 0)
+						infox("Out of cluster flags. Increase N_FLAG.", -3,
+								__FILE__, __LINE__);
+				}
+
+				scan_idx = stepPointmatrix(points, N_SCANS, N_MZPOINTS,RT_step);
 				if(scan_idx < 0)
 					infox ("Couldn't step matrix.", -4, __FILE__, __LINE__);
 				if(scan_idx != stepDoubles(RTs, N_SCANS, RT_step))
 					infox ("Couldn't step RTs.", -4, __FILE__, __LINE__);
-
-				//freshenFlags(flags, N_FLAG, total_scans-N_PREV-1, printcolor);
-				int last_scan = total_scans - N_PREV - 1;
-				if (last_scan > 0) {
-					tail = getlatestFlags(flags, N_SCANS, latest);
-					if (tail<=0)
-						infox("Couldn't update last_seen",-5,__FILE__,__LINE__);
-					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, 
-						tail, last_scan, RTs, argv[2]) < 0)
-						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
-					if (clearoldFlags(flags,N_SCANS,latest,tail,last_scan) < 0)
-						infox("Couldn't update flags",-7,__FILE__,__LINE__);
-				}
-				//printf("Stepped\n"); //DEBUG
 			}
 			mz_idx = 0;
 			RTs[scan_idx] = RT;
+		} else {
+			mz_idx++;
+			if (mz_idx >= N_MZPOINTS)
+				infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3, __FILE__, 
+						__LINE__);
 		}
-
-		if (mz_idx >= N_MZPOINTS)
-			infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3, __FILE__, __LINE__);
 
 		points[scan_idx][mz_idx].mz = mz;
 		points[scan_idx][mz_idx].I = I;
@@ -114,14 +122,6 @@ int main(int argc, char** argv)
 				} else {
 					*(points[a][b].cluster_flag) =
 						*(points[scan_idx][mz_idx].cluster_flag);
-
-					// Check that last_seen is correctly updated
-					if (points[a][b].cluster_flag->last_seen != total_scans ||
-						points[scan_idx][mz_idx].cluster_flag->last_seen !=
-						total_scans)
-						infox("last_seen did not update on cluster merge", -10,
-								__FILE__, __LINE__);
-
 					two_neighbours = 1;
 					break;
 				}
@@ -129,23 +129,27 @@ int main(int argc, char** argv)
 			if (two_neighbours) break;
 		}
 		if (!points[scan_idx][mz_idx].cluster_flag) {
-			points[scan_idx][mz_idx].cluster_flag = &flags[current_flag];
+			points[scan_idx][mz_idx].cluster_flag = &(flags[current_flag]);
 			flags[current_flag].last_seen = total_scans;
 			current_flag = getnextFlag(flags, N_FLAG, current_flag);
 			if (current_flag < 0)
-				infox("Out of cluster flags. Increase N_FLAG in cluster.h",-3,
+				infox("Out of cluster flags. Increase N_FLAG.",-3,
 						__FILE__, __LINE__);
 		}
-		mz_idx++;
+		// Check that last_seen is correctly updated
+		if(points[scan_idx][mz_idx].cluster_flag->last_seen != total_scans)
+			infox("last_seen not properly updated!",-10, __FILE__, __LINE__);
 	}
+
 	// Output remaining clusters
 	//freshenFlags(flags, N_FLAG, total_scans+(2*N_PREV), printcolor);
-	tail = getlatestFlags(flags, N_SCANS, latest);
-	if (tail<=0)
-		infox("Couldn't update last_seen",-5,__FILE__,__LINE__);
-	if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail, 
-		(total_scans + N_PREV + 1), RTs, argv[2]) < 0)
-		infox("Couldn't write cluster",-6,__FILE__,__LINE__);
+	tail = getlatestFlags(flags, N_FLAG, latest);
+	if (tail < 0)
+		infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
+	else if (tail > 0)
+		if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail, 
+			(total_scans + N_PREV + 1), RTs, argv[2]) < 0)
+			infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
 	fclose(infile);
