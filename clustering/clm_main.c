@@ -27,11 +27,18 @@ int main(int argc, char** argv)
 		exit (1);
 	}
 
-	// Check output dir exists
+	// Ensure output dir does not already exist
 	struct stat st;
+	if (stat(argv[2],&st) == 0) {
+		sprintf(line, "Output dir %s already exists", argv[2]);
+		infox(line, -2, __FILE__, __LINE__);
+	}
+	// Create output dir
+	if (mkdir(argv[2], (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != 0)
+		infox("Creation of output dir failed", -2, __FILE__, __LINE__);
 	stat(argv[2],&st);
-	if(!S_ISDIR(st.st_mode))
-		infox("Output dir does not exist", -2, __FILE__, __LINE__);
+	if (!S_ISDIR(st.st_mode))
+		infox("Creation of output dir failed", -2, __FILE__, __LINE__);
 
 	// Open input file
 	infile = fopen(argv[1],"r");
