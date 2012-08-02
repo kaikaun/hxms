@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
 	char line [BUFLEN] = {'\0'};
 	int a, b;
-	
+
 	FILE *infile;
 	Point **points;
 	double RTs[N_SCANS] = {0};
@@ -65,20 +65,17 @@ int main(int argc, char** argv)
 			total_scans++;
 			scan_idx++;
 			if (scan_idx >= N_SCANS) {
-				//printf("Stepping\n"); //DEBUG
-				//freshenFlags(flags, N_FLAG, total_scans-N_PREV-1, printcolor);
 				int last_scan = total_scans - N_PREV - 2;
 				if (last_scan > 0) {
 					tail = getlatestFlags(flags, N_FLAG, latest);
 					if (tail <= 0)
 						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
-					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, 
+					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest,
 						tail, last_scan, RTs, argv[2]) < 0)
+						//tail, total_scans + 1, RTs, argv[2]) < 0)
 						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
-					
 					if (clearoldFlags(flags,N_FLAG,latest,tail,last_scan) < 0)
 						infox("Couldn't update flags",-7,__FILE__,__LINE__);
-					
 					current_flag = getnextFlag(flags, N_FLAG, current_flag);
 					if (current_flag < 0)
 						infox("Out of cluster flags. Increase N_FLAG.", -3,
@@ -96,7 +93,7 @@ int main(int argc, char** argv)
 		} else {
 			mz_idx++;
 			if (mz_idx >= N_MZPOINTS)
-				infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3, __FILE__, 
+				infox ("mz_idx out of bounds. Raise N_MZPOINTS.", -3, __FILE__,
 						__LINE__);
 		}
 
@@ -142,13 +139,12 @@ int main(int argc, char** argv)
 	}
 
 	// Output remaining clusters
-	//freshenFlags(flags, N_FLAG, total_scans+(2*N_PREV), printcolor);
 	tail = getlatestFlags(flags, N_FLAG, latest);
 	if (tail < 0)
 		infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
 	else if (tail > 0)
-		if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail, 
-			(total_scans + N_PREV + 1), RTs, argv[2]) < 0)
+		if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail,
+			(total_scans + 1), RTs, argv[2]) < 0)
 			infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG

@@ -1,12 +1,13 @@
 // clm.h
 
 #define MZ_DIST 0.05
-#define I_MIN 4
+#define I_MIN 5
 
 #define N_SCANS 500
 #define N_MZPOINTS 20000
 #define N_FLAG 100000
 #define N_PREV 3
+#define MIN_CLUSTER_SIZE 20
 
 typedef struct {
 	int color, last_seen;

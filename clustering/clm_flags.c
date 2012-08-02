@@ -54,8 +54,8 @@ int getlatestFlags(const Flag *flags, int len, Flag *latest) {
 int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 						int tail, int scan, const double *RT, const char *dir) {
 	char buf[BUFLEN];
-	FILE *outfile;
 	int a, b, c;
+	double pointbuf[MIN_CLUSTER_SIZE][3];
 	int written = 0;
 
 	// Invalid arguments
@@ -69,30 +69,46 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 		if (latest[a].last_seen == -1) continue;
 		if (latest[a].last_seen >= scan) continue;
 
-		// Open file to write the cluster into
-		sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
-		outfile = fopen(buf, "w");
-		if (!outfile) {
-			return -2; // Could not open file to write cluster to
-		}
-
-		char toolong = 0; //DEBUG
+		FILE *outfile = NULL;
+		char longclust = 0;
+		int points = 0;
 
 		// Find points with colors that match this old color and write them out
 		for (b=0; b<dim1; ++b) {
 			for (c=0; c<dim2; ++c) {
 				if (!mtx[b][c].mz) break; // End of scan, so break to next scan
 				if (mtx[b][c].cluster_flag->color == latest[a].color) {
-					fprintf(outfile, "%f %f %f\n", RT[b], mtx[b][c].mz,
-							mtx[b][c].I);
+					if (b==0) longclust = 1;
+					if (points < MIN_CLUSTER_SIZE) {
+						// Buffer points temporarily
+						pointbuf[points][0] = RT[b];
+						pointbuf[points][1] = mtx[b][c].mz;
+						pointbuf[points][2] = mtx[b][c].I;
+					} else {
+						if (points == MIN_CLUSTER_SIZE) {
+							// Open file to write the cluster into
+							sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
+							outfile = fopen(buf, "a");
+							if (!outfile) return -2; // Could not open file
 
-					if (b==0) toolong = 1; //DEBUG
+							// Dump buffered points to file
+							int d;
+							for(d=0;d<MIN_CLUSTER_SIZE;++d)
+								fprintf(outfile, "%f %f %f\n", pointbuf[d][0],
+										pointbuf[d][2], pointbuf[d][2]);
+						}
+						fprintf(outfile,"%f %f %f\n", RT[b], mtx[b][c].mz,
+								mtx[b][c].I);
+					}
+					++points;
 				}
 			}
 		}
-		if (toolong) printf("Cluster %d reached head of buffer!\n",latest[a].color);//DEBUG
+		if (longclust) {
+			printf("Cluster %d reached head of buffer!\n",latest[a].color);//DEBUG
+		}
 
-		fclose(outfile);
+		if (outfile) fclose(outfile);
 		++written;
 	}
 
@@ -131,57 +147,3 @@ int clearoldFlags(Flag *flags, int len, const Flag *latest, int tail, int scan){
 
 	return cleared;
 }
-
-// Clear old flags with last_seen < scan from flags[]
-// Send old colors and their latest last_seen to output() (0 return for success)
-// Return number of cleared flags or <0 for error
-/* int freshenFlags(Flag *flags,int len,int scan,int (*outflag)(Flag oldflag)) {
-	Flag new[len];
-	int curr_color = -1, tail = 0, cleared = 0;
-	int a,b;
-
-	// Invalid arguments
-	if (len <= 0) return -1;
-	if (scan < 0) return -1;
-
-	// Populate new[] with the latest last_seen for each color and store highest
-	// color number in curr_color
-	for (a=0; a<len; ++a) {
-		if (flags[a].last_seen == -1) continue;
-		for (b=0; b<tail; ++b) {
-			if (flags[a].color == new[b].color) {
-				if (new[b].last_seen < flags[a].last_seen)
-					new[b].last_seen = flags[a].last_seen;
-				break;
-			}
-		}
-		if (b == tail) {
-			new[tail++] = flags[a];
-			if (curr_color < flags[a].color) curr_color = flags[a].color;
-		}
-	}
-
-	// Go through new[] and pass flags with old colors to outflag()
-	for (b=0; b<tail; ++b)
-		if (new[b].last_seen < scan) {
-			int ret = outflag(new[b]);
-			if (ret) return -2; // Output of point failed
-		}
-
-	// Mark old flags as available and give them unique new colors
-	for (a=0; a<len; ++a) {
-		if (flags[a].last_seen == -1) continue;
-		for (b=0; b<tail; ++b) {
-			if (flags[a].color == new[b].color) {
-				if (new[b].last_seen < scan) {
-					flags[a].color = ++curr_color;
-					flags[a].last_seen = -1;
-					++cleared;
-				}
-				break;
-			}
-		}
-	}
-
-	return cleared;
-} */

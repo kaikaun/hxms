@@ -8,3 +8,7 @@ matrix (2/3+cluster) 39m43.903s                 40m4.357s                 0m17.5
                      C_UD_even_DT_4+.csv        C_UD_odd_DT_4+.csv        Testset_DT_4+.csv
 preprocess (-i 4)    0m10.490s                  0m11.150s                 0m0.280s
 clm                  6m9.915s (55893)           7m14.731s (76049)         0m0.457s (2313)
+
+                     C_UD_even_DT_5+.csv        C_UD_odd_DT_5+.csv        Testset_DT_5+.csv
+preprocess (-i 5)    0m9.551s                   0m10.200s                 0m0.281s
+clm (min 20)         3m2.051s (5655)            3m25.706s (8558)          0m0.217s (265)

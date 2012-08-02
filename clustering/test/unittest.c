@@ -210,85 +210,6 @@ void testgetlatestFlags(Flag *flags, int len) {
 	printf("getlatestFlag(f,%d,l) passed\n",len);
 }
 
-// Dummy output function for freshenFlags that does nothing
-/* int discard(Flag oldflag) {
-	return 0;
-} */
-
-// Tests freshenFlags (flag array must be preallocated)
-/* void testfreshenFlags(Flag *flags, int len, int scan) {
-	char errbuf[BUFLEN];
-	int cleared;
-	int a, b;
-
-	if (len <= 0 || scan < 0) {
-		cleared = freshenFlags(flags, len, scan, discard);
-		// Check for failure on invalid parameters
-		if (cleared >= 0) {
-			sprintf(errbuf, "len = %d, scan = %d succeeded when it should fail", 
-					len, scan);
-			infox(errbuf, -14, __FILE__, __LINE__);
-		}
-	} else {
-		// Check for clears or changes when no flags are used
-		for (a=0; a<len; ++a) {
-			flags[a].color = a;
-			flags[a].last_seen = -1;
-		}
-		cleared = freshenFlags(flags, len, scan, discard);
-		if (cleared != 0)
-			infox("freshenFlags cleared unused flag", -15, __FILE__, __LINE__);
-		for (a=0; a<len; ++a)
-			if (flags[a].color != a || flags[a].last_seen != -1)
-				infox("freshenFlags changed unused flag",-16,__FILE__,__LINE__);
-
-		// Check for clears or changes when no flags are old
-		for (a=0; a<len; ++a) {
-			flags[a].color = a;
-			flags[a].last_seen = scan;
-		}
-		cleared = freshenFlags(flags, len, scan, discard);
-		if (cleared != 0)
-			infox("freshenFlags cleared fresh flag", -15, __FILE__, __LINE__);
-		for (a=0; a<len; ++a)
-			if (flags[a].color != a || flags[a].last_seen != scan)
-				infox("freshenFlags changed fresh flag",-16,__FILE__,__LINE__);
-
-		if (scan > 0) {
-			for(b=0;b<len;++b) {
-				for (a=0; a<len; ++a) {
-					flags[a].color = a;
-					if (a<=b) flags[a].last_seen = 0;
-					else flags[a].last_seen = scan;
-				}
-				cleared = freshenFlags(flags, len, scan, discard);
-				// Check that old flags are cleared
-				if (cleared != b+1) {
-					sprintf(errbuf,"freshenFlags cleared %d not %d flags",
-							cleared, b+1);
-					infox(errbuf, -17, __FILE__, __LINE__);
-				}
-				// Check that cleared flags are correctly changed
-				for (a=0; a<len; ++a) {
-					if (a<=b) {
-						if (flags[a].color != a+len)
-							infox("freshenFlags did not update old flag color",
-									-18,__FILE__,__LINE__);
-						if (flags[a].last_seen != -1)
-							infox("freshenFlags did not set old flag available",
-									-19,__FILE__,__LINE__);
-					} else {
-						if (flags[a].color != a || flags[a].last_seen !=scan)
-							infox("freshenFlags changed fresh flag", -16, 
-									__FILE__, __LINE__);
-					}
-				}
-			}
-		}
-	}
-	printf("freshenFlags(f,%d,%d,o) passed\n",len,scan);
-} */
-
 int main(int argc, char** argv)
 {
 	int rows = 50, cols = 100, len = 1000;
@@ -324,14 +245,6 @@ int main(int argc, char** argv)
 
 	testgetlatestFlags(flags, -1);
 	testgetlatestFlags(flags, len);
-
-/*	testfreshenFlags(flags, 0, 0);
-	testfreshenFlags(flags, -1, 0);
-	testfreshenFlags(flags, 0, -1);
-	testfreshenFlags(flags, -1, -1);
-	testfreshenFlags(flags, len, -1);
-	testfreshenFlags(flags, len, 0);
-	testfreshenFlags(flags, len, 1); */
 
 	printf("All tests passed\n");
 	return 0;
