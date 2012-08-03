@@ -23,7 +23,7 @@ int infox (const char*, int, const char*, int);
 int getnextFlag(const Flag*, int, int);
 int getlatestFlags(const Flag*, int, Flag*);
 int writeoldClusters(Point**, int, int, const Flag*, int, int, const double*, 
-						const char*);
+						const char*, int);
 int clearoldFlags(Flag*, int, const Flag*, int, int);
 // int freshenFlags(Flag *, int, int, int (*output)(Flag));
 

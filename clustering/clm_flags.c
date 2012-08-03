@@ -48,11 +48,11 @@ int getlatestFlags(const Flag *flags, int len, Flag *latest) {
 	return tail; // tail == len(latest[])
 }
 
-// Write all the clusters in mtx[][] with colors older than scan to separate
-// files in dir, given the output of getlatestseenFlags() and RT[]
-// Return the number of clusters written or <0 for error
-int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
-						int tail, int scan, const double *RT, const char *dir) {
+// Write all the clusters in mtx[][] with colors older than scan and at least
+// min points to separate files in dir, given the output of getlatestseenFlags()
+// and RT[]. Return the number of clusters written or <0 for error
+int writeoldClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
+						int scan, const double *RT, const char *dir, int min) {
 	char buf[BUFLEN];
 	int a, b, c;
 	double pointbuf[MIN_CLUSTER_SIZE][3];
@@ -63,6 +63,7 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 	if (dim2 <= 0) return -1;
 	if (tail <= 0) return -1;
 	if (scan < 0) return -1;
+	if (min < 0) return -1;
 
 	for (a=0; a<tail; ++a) {
 		// Check if this color is old
@@ -70,7 +71,7 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 		if (latest[a].last_seen >= scan) continue;
 
 		FILE *outfile = NULL;
-		char longclust = 0;
+		//char longclust = 0;
 		int points = 0;
 
 		// Find points with colors that match this old color and write them out
@@ -78,14 +79,14 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 			for (c=0; c<dim2; ++c) {
 				if (!mtx[b][c].mz) break; // End of scan, so break to next scan
 				if (mtx[b][c].cluster_flag->color == latest[a].color) {
-					if (b==0) longclust = 1;
-					if (points < MIN_CLUSTER_SIZE) {
+					//if (b==0) longclust = 1; //DEBUG
+					if (points < min) {
 						// Buffer points temporarily
 						pointbuf[points][0] = RT[b];
 						pointbuf[points][1] = mtx[b][c].mz;
 						pointbuf[points][2] = mtx[b][c].I;
 					} else {
-						if (points == MIN_CLUSTER_SIZE) {
+						if (points == min) {
 							// Open file to write the cluster into
 							sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
 							outfile = fopen(buf, "a");
@@ -104,9 +105,7 @@ int writeoldClusters(Point **mtx, int dim1, int dim2, const Flag *latest,
 				}
 			}
 		}
-		if (longclust) {
-			printf("Cluster %d reached head of buffer!\n",latest[a].color);//DEBUG
-		}
+		//if (longclust) printf("Cluster %d reached head of buffer!\n",latest[a].color);//DEBUG
 
 		if (outfile) fclose(outfile);
 		++written;

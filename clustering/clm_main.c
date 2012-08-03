@@ -74,15 +74,26 @@ int main(int argc, char** argv)
 			if (scan_idx >= N_SCANS) {
 				int last_scan = total_scans - N_PREV - 2;
 				if (last_scan > 0) {
+					// Write out old clusters and clear their flags
 					tail = getlatestFlags(flags, N_FLAG, latest);
 					if (tail <= 0)
 						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
 					if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest,
-						tail, last_scan, RTs, argv[2]) < 0)
-						//tail, total_scans + 1, RTs, argv[2]) < 0)
+						tail, last_scan, RTs, argv[2], MIN_CLUSTER_SIZE) < 0)
 						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 					if (clearoldFlags(flags,N_FLAG,latest,tail,last_scan) < 0)
 						infox("Couldn't update flags",-7,__FILE__,__LINE__);
+
+					// Write out the parts of current clusters that would be 
+					// lost on stepping (i.e. long clusters)
+					tail = getlatestFlags(flags, N_FLAG, latest);
+					if (tail <= 0)
+						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
+					if (writeoldClusters(points, RT_step, N_MZPOINTS, latest,
+						tail, total_scans + 1, RTs, argv[2], 0) < 0)
+						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
+
+					// Update current_flag
 					current_flag = getnextFlag(flags, N_FLAG, current_flag);
 					if (current_flag < 0)
 						infox("Out of cluster flags. Increase N_FLAG.", -3,
@@ -151,7 +162,7 @@ int main(int argc, char** argv)
 		infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
 	else if (tail > 0)
 		if (writeoldClusters(points, N_SCANS, N_MZPOINTS, latest, tail,
-			(total_scans + 1), RTs, argv[2]) < 0)
+			(total_scans + 1), RTs, argv[2], MIN_CLUSTER_SIZE) < 0)
 			infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
