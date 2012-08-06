@@ -18,12 +18,21 @@ typedef struct {
 	Flag *cluster_flag; // Pointer to cluster point belongs to (NULL if none)
 } Point;
 
+typedef struct {
+	int dim1, dim2, base;
+	double *RTs;
+	Point **pts;
+} Matrix;
+
 int infox (const char*, int, const char*, int);
 
 int getnextFlag(const Flag*, int, int);
 int getlatestFlags(const Flag*, int, Flag*);
+int freshenFlags(Flag*, int, const Flag*, int);
 int writeoldClusters(Point**, int, int, const Flag*, int, int, const double*, 
-						const char*, int);
+						int, const char*, int);
+int writeClusters(Point**, int, int, const Flag*, int, int, const double*, 
+						int, const char*, int);
 int clearoldFlags(Flag*, int, const Flag*, int, int);
 // int freshenFlags(Flag *, int, int, int (*output)(Flag));
 
