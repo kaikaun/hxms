@@ -33,7 +33,8 @@ int writeoldClusters(Point**, int, int, const Flag*, int, int, const double*,
 						int, const char*, int);
 int writeClusters(Point**, int, int, const Flag*, int, int, const double*, 
 						int, const char*, int);
-int clearoldFlags(Flag*, int, const Flag*, int, int);
+int clearoldFlags(Flag*, int, const Flag*, int, int, int);
+int mergeColors(Flag*, int, const Flag*, int);
 // int freshenFlags(Flag *, int, int, int (*output)(Flag));
 
 Point** Pointmatrix(int, int);

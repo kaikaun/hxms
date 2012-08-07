@@ -12,13 +12,14 @@ int main(int argc, char** argv)
 	char line [BUFLEN] = {'\0'};
 	int a, b;
 
+	struct stat st;
 	FILE *infile;
 	Point **points;
 	double RTs[N_SCANS] = {0};
 	Flag flags[N_FLAG], latest[N_FLAG];
 
 	int scan_idx = -1, mz_idx = 0, current_flag = 0, scan_base = 0, tail;
-	int RT_step = N_SCANS/3;
+	int curr_color = 0, RT_step = N_SCANS/3;
 	//int line_ctr = 0; //DEBUG
 
 	// Check command line arguments, print usage if wrong
@@ -28,7 +29,6 @@ int main(int argc, char** argv)
 	}
 
 	// Ensure output dir does not already exist
-	struct stat st;
 	if (stat(argv[2],&st) == 0) {
 		sprintf(line, "Output dir %s already exists", argv[2]);
 		infox(line, -2, __FILE__, __LINE__);
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 
 	// Initialize flags;
 	for(a = 0; a<N_FLAG; ++a) {
-		flags[a].color = a;
+		flags[a].color = curr_color++;
 		flags[a].last_seen = -1;
 	}
 
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
 			if (scan_idx >= N_SCANS) {
 				int last_scan = scan_base + scan_idx - N_PREV - 2;
 				if (last_scan > 0) {
-					// Write out old clusters and clear their flags
+					// Write out old clusters
 					tail = getlatestFlags(flags, N_FLAG, latest);
 					if (tail <= 0)
 						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
@@ -82,10 +82,14 @@ int main(int argc, char** argv)
 					if (writeClusters(points,N_SCANS,N_MZPOINTS,latest,tail,
 						last_scan,RTs,scan_base,argv[2],MIN_CLUSTER_SIZE) < 0)
 						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
-					if (clearoldFlags(flags,N_FLAG,latest,tail,last_scan) < 0)
+
+					// Clear old flags
+					curr_color=clearoldFlags(flags,N_FLAG,latest,tail,last_scan,
+												curr_color);
+					if (curr_color < 0)
 						infox("Couldn't update flags",-7,__FILE__,__LINE__);
 
-					// Write out the parts of current clusters that would be 
+					// Write out the parts of current clusters that would be
 					// lost on stepping (i.e. long clusters)
 					if (writeClusters(points,RT_step,N_MZPOINTS,latest,tail,
 						(scan_base+scan_idx+1),RTs,scan_base,argv[2],0) < 0)
@@ -118,8 +122,8 @@ int main(int argc, char** argv)
 		points[scan_idx][mz_idx].I = I;
 
 		char two_neighbours = 0;
-		for (a = scan_idx-1; a >= scan_idx-N_PREV; --a) {
-			if (a < 0) break;
+		for (a = scan_idx-N_PREV; a < scan_idx ; ++a) {
+			if (a < 0) continue;
 
 			for (b = 0; b < N_MZPOINTS; ++b) {
 				if (!points[a][b].mz) break;
@@ -134,8 +138,12 @@ int main(int argc, char** argv)
 					points[scan_idx][mz_idx].cluster_flag =
 						points[a][b].cluster_flag;
 				} else {
-					*(points[a][b].cluster_flag) =
-						*(points[scan_idx][mz_idx].cluster_flag);
+					if (points[scan_idx][mz_idx].cluster_flag->color !=
+						points[a][b].cluster_flag->color)
+						if (mergeColors(flags,N_FLAG,
+							points[scan_idx][mz_idx].cluster_flag,
+							points[scan_idx][mz_idx].cluster_flag->color) < 0)
+							infox("Could not merge",-8,__FILE__,__LINE__);
 					two_neighbours = 1;
 					break;
 				}

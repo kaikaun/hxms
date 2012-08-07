@@ -232,34 +232,46 @@ int writeClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
 
 
 // Mark old flags as available and give them unique new color numbers, given the
-// output of getlatestseenFlags(). Return number of flags cleared or <0 if error
-int clearoldFlags(Flag *flags, int len, const Flag *latest, int tail, int scan){
+// output of getlatestFlags() and the next highest color to use
+// Return new highest color or <0 for error
+int clearoldFlags(Flag *flags, int len, const Flag *latest, int tail, int scan,
+					int curr_color){
 	int a,b;
-	int curr_color = 0;
-	int cleared = 0;
 
 	// Invalid arguments
 	if (len <= 0) return -1;
 	if (tail <= 0) return -1;
 	if (scan < 0) return -1;
-
-	// Put highest color number in flags in curr_color
-	for (a=0; a<len; ++a)
-		if (curr_color < flags[a].color) curr_color = flags[a].color;
+	if (curr_color < 0) return -1;
 
 	for (a=0; a<len; ++a) {
 		if (flags[a].last_seen == -1) continue;
 		for (b=0; b<tail; ++b) {
 			if (flags[a].color == latest[b].color) {
 				if (latest[b].last_seen < scan) {
-					flags[a].color = ++curr_color;
+					flags[a].color = curr_color++;
 					flags[a].last_seen = -1;
-					++cleared;
 				}
 				break;
 			}
 		}
 	}
 
-	return cleared;
+	return curr_color;
+}
+
+// Change all flags with old_color to be the same as new_flag
+// Return number of flags changed or <0 for error
+int mergeColors(Flag *flags, int len, const Flag *new_flag, int old_color) {
+	if (len <= 0) return -1; // Invalid arguments
+	//if (old_color == new_flag->color) return 0; //Nothing to do
+
+	int a, changed = 0;
+	for (a=0;a<len;++a) {
+		if(flags[a].color == old_color){
+			flags[a] = *new_flag;
+			++changed;
+		}
+	}
+	return changed;
 }

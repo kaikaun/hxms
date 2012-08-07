@@ -23,14 +23,13 @@ def main():
 					ok.append(False)
 				for i1,v1 in enumerate(pts):
 					if ok[i1] == False:
-						for i2,v2 in enumerate(pts):
-							if i1 != i2:
-								if abs(v1[0]-v2[0])<=3 and abs(v1[1]-v2[1])<=0.05:
-									ok[i1]=True
-									ok[i2]=True
+						for i2,v2 in [p for p in enumerate(pts) if p[0]!=i1]:
+							if abs(v1[0]-v2[0])<=3 and abs(v1[1]-v2[1])<=0.05:
+								ok[i1]=True
+								ok[i2]=True
 				for i1,v1 in enumerate(pts):
 					if ok[i1] == False:
-						print file, 'has orphan point', v1
+						print os.path.join(subdir,file), 'has orphan point', v1
 	return 0
 
 if __name__ == '__main__':
