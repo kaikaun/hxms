@@ -121,9 +121,9 @@ int main(int argc, char** argv)
 		points[scan_idx][mz_idx].mz = mz;
 		points[scan_idx][mz_idx].I = I;
 
-		char two_neighbours = 0;
-		for (a = scan_idx-N_PREV; a < scan_idx ; ++a) {
-			if (a < 0) continue;
+		int merges = 0;
+		for (a = scan_idx-1; a >= scan_idx-N_PREV ; --a) {
+			if (a < 0) break;
 
 			for (b = 0; b < N_MZPOINTS; ++b) {
 				if (!points[a][b].mz) break;
@@ -139,16 +139,16 @@ int main(int argc, char** argv)
 						points[a][b].cluster_flag;
 				} else {
 					if (points[scan_idx][mz_idx].cluster_flag->color !=
-						points[a][b].cluster_flag->color)
+						points[a][b].cluster_flag->color) {
 						if (mergeColors(flags,N_FLAG,
 							points[scan_idx][mz_idx].cluster_flag,
-							points[scan_idx][mz_idx].cluster_flag->color) < 0)
+							points[a][b].cluster_flag->color) < 0)
 							infox("Could not merge",-8,__FILE__,__LINE__);
-					two_neighbours = 1;
-					break;
+						if (++merges > MAX_MERGES) break;
+					}
 				}
 			}
-			if (two_neighbours) break;
+			if (merges > MAX_MERGES) break;
 		}
 		if (!points[scan_idx][mz_idx].cluster_flag) {
 			points[scan_idx][mz_idx].cluster_flag = &(flags[current_flag]);

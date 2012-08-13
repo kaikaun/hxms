@@ -8,6 +8,7 @@
 #define N_FLAG 100000
 #define N_PREV 3
 #define MIN_CLUSTER_SIZE 20
+#define MAX_MERGES 0
 
 typedef struct {
 	int color, last_seen;

@@ -264,7 +264,7 @@ int clearoldFlags(Flag *flags, int len, const Flag *latest, int tail, int scan,
 // Return number of flags changed or <0 for error
 int mergeColors(Flag *flags, int len, const Flag *new_flag, int old_color) {
 	if (len <= 0) return -1; // Invalid arguments
-	//if (old_color == new_flag->color) return 0; //Nothing to do
+	if (old_color == new_flag->color) return 0; //Nothing to do
 
 	int a, changed = 0;
 	for (a=0;a<len;++a) {
