@@ -9,28 +9,27 @@ import os
 import fnmatch
 import re
 import numpy as np
-from sklearn.cluster import MeanShift, estimate_bandwidth
+from sklearn.cluster import MeanShift
+
+# Tuning parameters
+bw = 0.15 # Bandwidth for MeanShift
+sc = 50   # Scaling parameter for RT
 
 def main():
 	r = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')
-	
+	ms = MeanShift(bandwidth=bw, bin_seeding=True)
 	for path in [p for p in sys.argv[1:] if os.path.exists(p)]:
 		for subdir, dirs, files in os.walk(path):
-			for file in fnmatch.filter(files,'*.clust'):
+			for file in sorted(fnmatch.filter(files,'*.clust')):
 				f=open(os.path.join(subdir,file), 'r')
 				lines=f.readlines()
 				f.close()
 				pts = []
 				for line in lines:
-					result=r.search(line)
-					pts.append([int(result.group(1)), float(result.group(3))])
-				p = np.array(pts)
-				bw = estimate_bandwidth(p)
-				ms = MeanShift(bandwidth=bw, bin_seeding=True)
-				ms.fit(p)
-				labels = ms.labels_
-				cluster_centers = ms.cluster_centers_
-				labels_unique = np.unique(labels)
+					res=r.search(line)
+					pts.append([float(res.group(2))/sc, float(res.group(3))])
+				ms.fit(np.array(pts))
+				labels_unique = np.unique(ms.labels_)
 				n_clusters_ = len(labels_unique)
 				print os.path.join(subdir,file) + ": %d" % n_clusters_
 	return 0
