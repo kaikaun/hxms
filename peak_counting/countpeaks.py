@@ -22,7 +22,7 @@ def main():
 	if not paths:
 		print "Usage: "+os.path.basename(__file__)+" <cluster directory> ..."
 		return -1
-	for path in [p for p in sys.argv[1:] if os.path.exists(p)]:
+	for path in paths:
 		for subdir, dirs, files in os.walk(path):
 			for file in sorted(fnmatch.filter(files,'*.clust')):
 				f=open(os.path.join(subdir,file), 'r')
