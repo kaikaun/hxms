@@ -1,0 +1,19 @@
+This script uses scikit-learn. Detailed installation instructions are at:
+
+http://scikit-learn.org/stable/install.html
+
+Briefly, try one of the following (all handle dependencies):
+
+1. (Ubuntu 12.04 LTS) 
+
+sudo apt-get install python-sklearn
+
+2. (Ubuntu 10.04 LTS) 
+
+wget -O- http://neuro.debian.net/lists/lucid.jp | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+sudo apt-key adv --recv-keys --keyserver pgp.mit.edu 2649A5A9
+sudo apt-get install python-sklearn
+
+3. (Python easy_install - requires python-dev and python-setuptools to be installed first)
+
+sudo easy_install -U scikit-learn
