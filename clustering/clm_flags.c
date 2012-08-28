@@ -3,10 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h> //DEBUG
 #include "clm.h"
-
-#define BUFLEN 100
 
 // Return index to next available flag in an array of flags or <0 for error
 int getnextFlag(const Flag *flags, int len, int current) {
@@ -78,73 +75,11 @@ int writePoint(FILE *outfile, int scan_no, double RT, double mz, double I) {
 	return fprintf(outfile,"%6d %9.3lf %9.3lf %9.3lf\n",scan_no,RT,mz,I);
 }
 
-// Write all the clusters in mtx[][] with colors older than scan and at least
-// min points to separate files in dir, given the output of getlatestseenFlags()
-// and RT[]. Return the number of clusters written or <0 for error
-int writeoldClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
-		int scan, const double *RT, int scan_base, const char *dir, int min) {
-	char buf[BUFLEN];
-	int a, b, c;
-	double ptbuf[min][4];
-	int written = 0;
-
-	// Invalid arguments
-	if (dim1 <= 0) return -1;
-	if (dim2 <= 0) return -1;
-	if (tail <= 0) return -1;
-	if (scan < 0) return -1;
-	if (min < 0) return -1;
-
-	for (a=0; a<tail; ++a) {
-		// Check if this color is old
-		if (latest[a].last_seen == -1) continue;
-		if (latest[a].last_seen >= scan) continue;
-
-		FILE *outfile = NULL;
-		int points = 0;
-
-		// Find points with colors that match this old color and write them out
-		for (b=0; b<dim1; ++b) {
-			for (c=0; c<dim2; ++c) {
-				if (!mtx[b][c].mz) break; // End of scan, so break to next scan
-				if (mtx[b][c].cluster_flag->color == latest[a].color) {
-					if (points < min) {
-						// Buffer points temporarily
-						ptbuf[points][0] = scan_base + b;
-						ptbuf[points][1] = RT[b];
-						ptbuf[points][2] = mtx[b][c].mz;
-						ptbuf[points][3] = mtx[b][c].I;
-					} else {
-						if (points == min) {
-							// Open file to write the cluster into
-							sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
-							outfile = fopen(buf, "a");
-							if (!outfile) return -2; // Could not open file
-
-							// Dump buffered points to file
-							int d;
-							for(d=0;d<min;++d)
-								writePoint(outfile,(int)ptbuf[d][0],ptbuf[d][1],
-								ptbuf[d][2],ptbuf[d][3]);
-						}
-						writePoint(outfile,scan_base+b,RT[b],mtx[b][c].mz,
-									mtx[b][c].I);
-					}
-					++points;
-				}
-			}
-		}
-		if (outfile) fclose(outfile);
-		++written;
-	}
-	return written;
-}
-
 // Write clusters in mtx[][] with colors older than scan and at least min points
-// to separate files in dir, given the output of getlatestseenFlags() and RT[]
+// to separate files in cwd, given the output of getlatestseenFlags() and RT[]
 // Return the number of clusters written or <0 for error (mtx must be freshened)
 int writeClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
-		int scan, const double *RT, int scan_base, const char *dir, int min) {
+		int scan, const double *RT, int scan_base, int min) {
 	// Invalid arguments
 	if (dim1 <= 0) return -1;
 	if (dim2 <= 0) return -1;
@@ -194,14 +129,8 @@ int writeClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
 					ptbuf[a][pts[a]][3] = mtx[b][c].I;
 				} else {
 					// Open file to append the cluster to
-					char buf[BUFLEN];
-					sprintf(buf,"%s/%06d.clust",dir,latest[a].color);
-
-					//DEBUG: Check whether file exists if cluster is long
-					if (!b && scan_base > 0) {
-						struct stat st;
-						if (stat(buf,&st)) printf("%s was not present\n", buf);
-					}
+					char buf[13];
+					sprintf(buf,"%06d.clust",latest[a].color);
 
 					FILE *outfile = fopen(buf, "a");
 					if (!outfile) return -2; // Could not open file
@@ -229,7 +158,6 @@ int writeClusters(Point **mtx,int dim1,int dim2,const Flag *latest,int tail,
 	}
 	return written;
 }
-
 
 // Mark old flags as available and give them unique new color numbers, given the
 // output of getlatestFlags() and the next highest color to use

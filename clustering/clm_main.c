@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "clm.h"
 
 #define BUFLEN 300
@@ -12,13 +13,12 @@ int main(int argc, char** argv)
 	char line [BUFLEN] = {'\0'};
 	int a, b;
 
-	struct stat st;
 	FILE *infile;
 	Point **points;
 	double RTs[N_SCANS] = {0};
 	Flag flags[N_FLAG], latest[N_FLAG];
 
-	int scan_idx = -1, mz_idx = 0, current_flag = 0, scan_base = 0, tail;
+	int scan_idx = -1, mz_idx = 0, current_flag = 0, scan_base = 0;
 	int curr_color = 0, RT_step = N_SCANS/3;
 	//int line_ctr = 0; //DEBUG
 
@@ -29,10 +29,12 @@ int main(int argc, char** argv)
 	}
 
 	// Ensure output dir does not already exist
+	struct stat st;
 	if (stat(argv[2],&st) == 0) {
 		sprintf(line, "Output dir %s already exists", argv[2]);
 		infox(line, -2, __FILE__, __LINE__);
 	}
+
 	// Create output dir
 	if (mkdir(argv[2], (S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)) != 0)
 		infox("Creation of output dir failed", -2, __FILE__, __LINE__);
@@ -56,6 +58,11 @@ int main(int argc, char** argv)
 		flags[a].last_seen = -1;
 	}
 
+	// Store current dir and change to output dir
+	char *cwd = getcwd(NULL,0);
+	if (!cwd) infox("Couldn't getcwd!",-255,__FILE__,__LINE__);
+	if (chdir(argv[2]) == -1) infox("Couldn't chdir!",-254,__FILE__,__LINE__);
+
 	while(fgets(line,BUFLEN,infile)!=NULL) {
 		double RT, mz, I;
 		int ret = sscanf (line, " %*d  %lf  %lf  %lf", &RT, &mz, &I);
@@ -74,13 +81,13 @@ int main(int argc, char** argv)
 				int last_scan = scan_base + scan_idx - N_PREV - 2;
 				if (last_scan > 0) {
 					// Write out old clusters
-					tail = getlatestFlags(flags, N_FLAG, latest);
+					int tail = getlatestFlags(flags, N_FLAG, latest);
 					if (tail <= 0)
 						infox("Couldn't get latest flags",-5,__FILE__,__LINE__);
 					if (freshenFlags(flags,N_FLAG,latest,tail) < 0)
 						infox("Couldn't freshen flags",-5,__FILE__,__LINE__);
 					if (writeClusters(points,N_SCANS,N_MZPOINTS,latest,tail,
-						last_scan,RTs,scan_base,argv[2],MIN_CLUSTER_SIZE) < 0)
+						last_scan,RTs,scan_base,MIN_CLUSTER_SIZE) < 0)
 						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 					// Clear old flags
@@ -92,7 +99,7 @@ int main(int argc, char** argv)
 					// Write out the parts of current clusters that would be
 					// lost on stepping (i.e. long clusters)
 					if (writeClusters(points,RT_step,N_MZPOINTS,latest,tail,
-						(scan_base+scan_idx+1),RTs,scan_base,argv[2],0) < 0)
+						(scan_base+scan_idx+1),RTs,scan_base,0) < 0)
 						infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 					// Update current_flag
@@ -140,6 +147,36 @@ int main(int argc, char** argv)
 				} else {
 					if (points[scan_idx][mz_idx].cluster_flag->color !=
 						points[a][b].cluster_flag->color) {
+						// Merge clusters
+						// Check if file for old color exists
+						char old_fn[13];
+						sprintf(old_fn,"%06d.clust",
+								points[a][b].cluster_flag->color);
+						struct stat st;
+						if (!stat(old_fn,&st)) {
+							char new_fn[13];
+							sprintf(new_fn,"%06d.clust",
+									points[scan_idx][mz_idx].cluster_flag->color);
+							if (stat(new_fn,&st)) {
+							// If file for new color does not exist, just rename
+							printf("Renaming %s to %s\n",old_fn,new_fn);//DEBUG
+								if(rename(old_fn,new_fn)) {
+									sprintf(line,"Could not rename %s to %s\n",
+											old_fn,new_fn);
+									infox(line,-40,__FILE__,__LINE__);
+								}
+							} else {
+							// Otherwise append old file to new file then delete
+							printf("Appending %s to %s\n",old_fn,new_fn);//DEBUG
+								if (appendfile(old_fn,new_fn) < 0) {
+									sprintf(line,"Could not append %s to %s\n",
+											old_fn,new_fn);
+									infox(line,-41,__FILE__,__LINE__);
+								}
+								remove(old_fn);
+							}
+						}
+
 						if (mergeColors(flags,N_FLAG,
 							points[scan_idx][mz_idx].cluster_flag,
 							points[a][b].cluster_flag->color) < 0)
@@ -168,11 +205,14 @@ int main(int argc, char** argv)
 		if (freshenFlags(flags,N_FLAG,latest,tail) < 0)
 			infox("Couldn't freshen flags",-5,__FILE__,__LINE__);
 		if (writeClusters(points,N_SCANS,N_MZPOINTS,latest,tail,
-			(scan_base+scan_idx+1),RTs,scan_base,argv[2],MIN_CLUSTER_SIZE) < 0)
+			(scan_base+scan_idx+1),RTs,scan_base,MIN_CLUSTER_SIZE) < 0)
 			infox("Couldn't write cluster",-6,__FILE__,__LINE__);
 
 	// printf ("Number of cluster flags used: %d\n", current_flag); //DEBUG
 	fclose(infile);
 	freePointmatrix(points);
+	if (chdir(cwd) == -1)
+		infox("Couldn't chdir!",-254,__FILE__,__LINE__);
+	free(cwd);
 	return 0;
 }

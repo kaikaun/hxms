@@ -1,12 +1,12 @@
 // clm.h
 
-#define MZ_DIST 0.05
+#define MZ_DIST 0.02
 #define I_MIN 5
 
-#define N_SCANS 500
+#define N_SCANS 600
 #define N_MZPOINTS 20000
-#define N_FLAG 100000
-#define N_PREV 3
+#define N_FLAG 200000
+#define N_PREV 2
 #define MIN_CLUSTER_SIZE 20
 #define MAX_MERGES 0
 
@@ -26,17 +26,14 @@ typedef struct {
 } Matrix;
 
 int infox (const char*, int, const char*, int);
+int appendfile (const char*, const char*);
 
 int getnextFlag(const Flag*, int, int);
 int getlatestFlags(const Flag*, int, Flag*);
 int freshenFlags(Flag*, int, const Flag*, int);
-int writeoldClusters(Point**, int, int, const Flag*, int, int, const double*, 
-						int, const char*, int);
-int writeClusters(Point**, int, int, const Flag*, int, int, const double*, 
-						int, const char*, int);
+int writeClusters(Point**,int,int,const Flag*,int,int,const double*,int,int);
 int clearoldFlags(Flag*, int, const Flag*, int, int, int);
 int mergeColors(Flag*, int, const Flag*, int);
-// int freshenFlags(Flag *, int, int, int (*output)(Flag));
 
 Point** Pointmatrix(int, int);
 void freePointmatrix(Point**);
