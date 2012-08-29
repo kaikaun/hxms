@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 	double RTs[N_SCANS] = {0};
 	Flag flags[N_FLAG], latest[N_FLAG];
 
-	int scan_idx = -1, mz_idx = 0, current_flag = 0, scan_base = 0;
+	int scan_idx = -1, mz_idx = 0, current_flag = 0, scan_base = 0, tail;
 	int curr_color = 0, RT_step = N_SCANS/3;
 	//int line_ctr = 0; //DEBUG
 
