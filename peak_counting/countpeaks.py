@@ -15,7 +15,7 @@ sc = 75           # Scaling parameter for RT vs
 bw = 0.08         # Bandwidth for MeanShift
 met = 'chebyshev' # Distance metric for DBSCAN
 eps = 0.015       # Max distance for DBSCAN
-min = 3           # Min neighbours for DBSCAN
+mnn = 3           # Min neighbours for DBSCAN
 #damp = 0.5        # Damping factor for Affinity propagation
 
 def main():
@@ -28,7 +28,7 @@ def main():
 		return -1
 	lre = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')
 	ms = sklearn.cluster.MeanShift(bandwidth=bw, bin_seeding=True)
-	db = sklearn.cluster.DBSCAN(metric=met, eps=eps, min_samples=min)
+	db = sklearn.cluster.DBSCAN(metric=met, eps=eps, min_samples=mnn)
 	#af = sklearn.cluster.AffinityPropagation(damping=damp)
 	for file in files:
 		pts = []
