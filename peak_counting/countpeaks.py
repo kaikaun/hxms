@@ -59,7 +59,7 @@ def main():
 		#af.fit(S,p)
 		#af_clusters = len(af.cluster_centers_indices_)
 
-		print file+': MS %d'%ms_clusters+' DB %d'%db_clusters+' max %.3f'%high_I
+		print file+' MS %d'%ms_clusters+' DB %d'%db_clusters+' max %.3f'%high_I
 	return 0
 
 if __name__ == '__main__':
