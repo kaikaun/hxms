@@ -24,14 +24,30 @@ WORKFLOW
      (i.e. if you already have directory wiht the same name,
       either stash it under a different name, or remove it if you are sure you do not need it)
 
-   * the clusters can be visualized usin $HXMS_PIPE_HOME/10_utils/serial_plotter.pl utility
+   * the clusters can be visualized using $HXMS_PIPE_HOME/10_utils/serial_plotter.pl utility
    
    wc -l clusters/* | sort -gk1 | tail -n 50 | tee plotting_input 
    $HXMS_PIPE_HOME/10_utils/serial_plotter.pl plotting_input pdfs 1
 
-   * note that directory "pdfs" will be created; it must, however be nonexsitent 
-     (i.e. if you already have directory wiht the same name,
-      either stash it under a different name, or remove it if you are sure you do not need it)
+      ** note that directory "pdfs" will be created; it must, however be nonexsitent 
+         (i.e. if you already have directory wiht the same name,
+         either stash it under a different name, or remove it if you are sure you do not need it)
+
+   * the number of peaks in each cluster can be obtained using $HXMS_PIPE_HOME/10_utils/countpeaks.py
+   
+   $HXMS_PIPE_HOME/11_hxms_pipe/10_utils/countpeaks.py clusters/*
+    
+     ** output:
+      clusters/058235.clust MS 1 DB 1 max 22.591
+      MS: the number of peaks using mean shift algorithm
+      DB: the number of peaks using DB scan algorithm
+      max: maximum intensity in the file
+   	 
+
+3) deadtime correction: run  $HXMS_PIPE_HOME/03_deadtime_coorection/optimize_dt.py to 
+   obtain the optimized parameters for deadtime correction on the given set of clusters
+
+   
 
 
 
