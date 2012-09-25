@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -Wall -O3
-LDFLAGS = -ltcmalloc -lprofiler
+#LDFLAGS = -ltcmalloc -lprofiler
 INCLUDE = 
 
 clmSOURCES = clm_main.c clm_utils.c clm_points.c clm_flags.c

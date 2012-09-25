@@ -1,22 +1,38 @@
 #! /usr/bin/perl -w
 # to get the input:
-#  wc -l * | sort -gk1 | tail -n 50 | tee input
-@ARGV ||
-    die "Usage:  $0  <input file name> \n";
+#  wc -l * | sort -gk1 | tail -n 50 | tee input 
+# --> note: in the above the column should be "1" (we are coutning from 0)
 
-$filename = $ARGV[0];
+(@ARGV > 1) ||
+    die "Usage:  $0  <input file name>  <output dir name> [<column>]\n";
+
+$filename   = $ARGV[0];
+$outdirname = $ARGV[1];
+$column     = 0;
+(@ARGV>2)  &&  ($column = $ARGV[2]);
+
+
+(-e $outdirname) && 
+    die "$outdirname already exists; please remove or rename.\n";
+
 open (IF, "<$filename" ) 
     || die "Cno $filename: $!.\n";
 
-($size, $name) = ();
+
 while ( <IF> ) {
+
     chomp;
-    ($size, $name) = split;
+    @aux  = split;
+    $name = $aux[$column];
+
     (-e $name) || next;
     ($name =~ /clust/ ) || next;
 
-    $clust_number = $name;
+    @aux = split '/', $name;
+    $clust_number = pop @aux;
     $clust_number =~ s/\.clust//;
+
+
     open (OF, ">blah.gscr") || 
 	die "CNo blah.gscr.\n";
     print OF "unset key \n";
@@ -38,16 +54,16 @@ while ( <IF> ) {
 	next;
     }
 
-    (-e "pdfs") || `mkdir pdfs`;
-    $cmd = "ps2pdf $clust_number.post pdfs/$clust_number.pdf";
+    (-e $outdirname) || `mkdir $outdirname`;
+    $cmd = "ps2pdf $clust_number.post $outdirname/$clust_number.pdf";
     (system $cmd ) && die "Error runnning $cmd.\n";
     (-e "$clust_number.post") && `rm $clust_number.post`;
 
-    print "wrote pdfs/$clust_number.pdf\n";
+    print "wrote $outdirname/$clust_number.pdf\n";
 
 }
 
 
 close IF;
 
-(-e "blah.gscr") || `rm blah.gscr`;
+(-e "blah.gscr") && `rm blah.gscr`;

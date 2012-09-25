@@ -1,0 +1,63 @@
+COMPILING
+==========
+1) preprocessor
+   cd $HXMS_PIPE_HOME/01_preprocessing/bin
+   make
+
+2) clustering 
+   cd $HXMS_PIPE_HOME/02_clustering/bin
+   make
+
+WORKFLOW
+==========
+1) data preprocessing from mzXML to plain text format, 
+   selecting odd/even scans; removing calibration scans
+   
+   $HXMS_PIPE_HOME/01_preprocess/preprocess -c  data/RI91-244_C_UD_odd_DT.mzXML   test.csv
+
+
+2) chopping up the input file into smaller clusters
+   
+   $HXMS_PIPE_HOME/02_clustering/clm test.csv clusters
+
+   * note that directory "clusters" will be created; it must, however be nonexsitent 
+     (i.e. if you already have directory wiht the same name,
+      either stash it under a different name, or remove it if you are sure you do not need it)
+
+   * the clusters can be visualized usin $HXMS_PIPE_HOME/10_utils/serial_plotter.pl utility
+   
+   wc -l clusters/* | sort -gk1 | tail -n 50 | tee plotting_input 
+   $HXMS_PIPE_HOME/10_utils/serial_plotter.pl plotting_input pdfs 1
+
+   * note that directory "pdfs" will be created; it must, however be nonexsitent 
+     (i.e. if you already have directory wiht the same name,
+      either stash it under a different name, or remove it if you are sure you do not need it)
+
+
+
+FILES 
+====
+
+clustering
+==========
+clm.h
+* Structs and function declarations for clm
+
+clm_main.c
+* Main()
+
+clm_utils.c
+* Error handling functions
+
+clm_points.c
+* Point handling functions
+
+clm_flags.c
+* Flag handling functions
+
+test/unittest.c
+* Unit tests for clm.h, clm_points.c, clm_flags.c
+* cd test; make unittest; ./unittest
+
+preprocess
+==========
