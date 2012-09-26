@@ -42,6 +42,9 @@ double length = DEFAULT_LENGTH * 1E-3, voltage = DEFAULT_VOLTAGE;
 double pulses; // Pulses per scan = scantime / cycletime
 double A; // Proportionality const : t = A * sqrt(m/z), A = L/sqrt(2*(e/amu)*V)
 
+// Warning flags
+double highest_t = 0.0;
+
 int main(int argc, char** argv) {
 	mxml_node_t *tree = NULL, *node = NULL;
 
@@ -62,6 +65,11 @@ int main(int argc, char** argv) {
 	// Write out mzXML
 	mxmlSetWrapMargin(0);
 	mxmlSaveFile(tree, output, mzXML_whitespace_cb);
+
+	// Print out warnings
+	if (highest_t > cycletime)
+		printf("Warning: Longest flight time (%.3f μs) longer than cycle time (%.3f μs)\n", 
+				highest_t*1E6, cycletime*1E6);
 
 	// Clean up
 	if (output) fclose(output);
@@ -149,7 +157,7 @@ void correct_deadtime(mxml_node_t *node) {
 
 		peakattr[i].I0 = I;
 		peakattr[i].t = A * sqrt(mz);
-		assert( peakattr[i].t <= cycletime );
+		if (peakattr[i].t > highest_t ) highest_t = peakattr[i].t;
 
 		for(int j = i-1; j >= 0; --j) {
 			assert(peakattr[i].t > peakattr[j].t);
