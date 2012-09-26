@@ -49,6 +49,10 @@ WORKFLOW
    the command line for $HXMS_PIPE_HOME/03_deadtime_coorection/bin/deadtime to perform this correction
    on the original mzXML file
 
+   Since the optimization uses simulated annealing, several runs should be made to ensure that the true
+   global optimum is found. The optimum should also not be too far from the documented value of 5 ns
+   non-extending and 0 ns extending.
+
    $HXMS_PIPE_HOME/03_deadtime_coorection/python/optimize_dt.py clusters/*
 
    ** output of optimize_dt.py:
@@ -60,7 +64,12 @@ WORKFLOW
 
    *** no output for deadtime
 
-4) gaussian fitting: run $HXMS_PIPE_HOME/04_gaussian_fitting/fit_gaussians.py to fit 2D gaussians to
+4) Convert and cluster the deadtime-corrected mzXML file using the same steps as 1) and 2)
+
+   $HXMS_PIPE_HOME/01_preprocess/preprocess -c corr.mzXML corr.csv
+   $HXMS_PIPE_HOME/02_clustering/clm corr.csv clusters
+
+5) gaussian fitting: run $HXMS_PIPE_HOME/04_gaussian_fitting/fit_gaussians.py to fit 2D gaussians to
    the peaks found by meanshift in cluster files
 
    $HXMS_PIPE_HOME/04_gaussian_fitting/fit_gaussians.py clusters/*
