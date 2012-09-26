@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -std=gnu99 -Wall -D_THREAD_SAFE -D_REENTRANT
-LDFLAGS = -lm -lpthread -L./ -lmxml
+LDFLAGS = -L./ -lmxml -lm -lpthread
 VPATH   = ../src:../src/b64
 INCLUDE =  -I ../src -I ../src/b64
 
