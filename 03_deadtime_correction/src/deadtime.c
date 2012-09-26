@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 void parse_command_line(int argc, char** argv) {
 	int opt;
 
-	while ((opt = getopt (argc, argv, "d:s:c:l:v:")) != -1) {
+	while ((opt = getopt (argc, argv, "d:D:s:c:l:v:")) != -1) {
 		switch (opt) {
 			case 'd':
 				nedeadtime = atof(optarg) * 1E-9;

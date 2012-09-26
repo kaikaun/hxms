@@ -56,6 +56,10 @@ def correct_deadtime(dt, spectrum):
 				else:
 					pulses_blocked += new_scan[mz2]
 			new_I = scan[mz]*math.exp(pulses_blocked / pulses) / pulses_not_hit
+			if new_I > 1:
+				print "Invalid peak values for deadtime correction!"
+				print "Check that peak values have not been previously corrected"
+				return -2
 			new_I = -math.log(1 - new_I) * pulses
 			new_scan[mz] = new_I
 		new_spectrum[RT] = new_scan
