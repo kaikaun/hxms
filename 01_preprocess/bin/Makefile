@@ -1,27 +1,26 @@
 CC      = gcc
 CFLAGS  = -std=gnu99 -Wall -D_THREAD_SAFE -D_REENTRANT
-LDFLAGS = -L./ -lmxml -lm -lpthread
-VPATH   = ../src:../src/b64
-INCLUDE =  -I ../src -I ../src/b64
+LIBDIR  = ../../lib
+VPATH   = ../src:$(LIBDIR)
+LDFLAGS = -L$(LIBDIR) -lmxml -lm -lpthread
+INCLUDE = -I$(LIBDIR)
 
 MXMLVER = mxml-2.7
 
-SOURCES = preprocess.c deadtime.c easyzlib.c mxmlmzXML.c cdecode.c cencode.c
-
-ppSOURCES = preprocess.c mxmlmzXML.c easyzlib.c cdecode.c cencode.c  
-ppOBJECTS = $(ppSOURCES:.c=.o)
+dtSOURCES = preprocess.c mxmlmzXML.c easyzlib.c cdecode.c cencode.c
+dtOBJECTS = $(dtSOURCES:.c=.o)
 
 all: preprocess
 
-preprocess: $(ppOBJECTS) libmxml.a
-	$(CC) $(CFLAGS) -o $@ $(ppOBJECTS) $(LDFLAGS)  
- 
+preprocess: $(dtOBJECTS) libmxml.a
+	$(CC) $(CFLAGS) -o $@ $(dtOBJECTS) $(LDFLAGS)
+
 libmxml.a:
 	rm -rf $(MXMLVER)/
-	tar xzf $(MXMLVER).tar.gz
+	tar xzf $(LIBDIR)/$(MXMLVER).tar.gz
 	cd $(MXMLVER);./configure
 	make -C $(MXMLVER)/ libmxml.a
-	mv $(MXMLVER)/libmxml.a .
+	mv $(MXMLVER)/libmxml.a $(LIBDIR)
 	rm -rf $(MXMLVER)/
 
 .c.o:
@@ -30,5 +29,5 @@ libmxml.a:
 clean:
 	rm -f *.o
 cleanall:
-	rm -rf $(MXMLVER)
-	rm -f preprocess deadtime *.o *.a
+	rm -rf $(MXMLVER)/
+	rm -f preprocess *.o $(LIBDIR)/libmxml.a
