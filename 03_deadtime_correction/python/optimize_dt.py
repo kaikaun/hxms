@@ -70,11 +70,24 @@ def total_curv(dt, spectra):
 	return np.sum(np.abs(curv))
 
 def main():
-	files = [glob.glob(g) for g in sys.argv[1:]]
-	files = [f for f in sum(files,[]) if re.match('\d{6}\.clust$', basename(f))]
-	if not files:
-		print 'Usage: ' + basename(__file__) + ' <cluster> ...'
+
+	if ( len(sys.argv) <= 1 ):
+		print 'Usage: ' + basename(__file__) + ' <file w. cluster names>'
+		return -1	
+
+	filenames = sys.argv[1]
+	try:
+		inf = open (filenames, "r")
+	except:
+		print "error opening ", filenames
 		return -1
+
+	files      = []
+	for line in inf:
+		line.rstrip()
+		whatever = line.split(" ")
+		files.append(whatever[0])
+
 
 	spectra = []
 	lre = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')
@@ -103,11 +116,14 @@ def main():
 	#dt = opt.brute(total_curv, ((0,10),(0,10)), args=(spectra,), Ns=100)
 
 	# Simulated annealing
-	dt,c = opt.anneal(total_curv,dt0,args=(spectra,),lower=[0,0],upper=[10.,4.])
+	dt,c = opt.anneal(total_curv, dt0, args=(spectra,), lower=[0,0], upper=[10.,4.], disp=True)
 
-	print 'Non-extending DT: ' + str(dt[0]) + ' ns'
-	print 'Extending DT: ' + str(dt[1]) + ' ns'
-	print 'Command line: deadtime -d' + str(dt[0]) + ' -D' + str(dt[1]) + ' <mzXML>'
+	print
+	print "Non-extending DT: %.3f ns" % dt[0]
+	print "    Extending DT: %.3f ns" % dt[1]
+	print
+	print "Command line: deadtime -d%.3f  -D%.3f  <mzXML>" % (dt[0], dt[1])
+	print
 
 	return 0
 

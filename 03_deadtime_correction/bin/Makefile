@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -std=gnu99 -Wall -D_THREAD_SAFE -D_REENTRANT
-LIBDIR  = ../../lib
+LIBDIR  = ../../11_lib
 VPATH   = ../src:$(LIBDIR)
 LDFLAGS = -L$(LIBDIR) -lmxml -lm -lpthread
 INCLUDE = -I$(LIBDIR)
@@ -13,7 +13,7 @@ dtOBJECTS = $(dtSOURCES:.c=.o)
 all: deadtime
 
 deadtime: $(dtOBJECTS) libmxml.a
-	$(CC) $(CFLAGS) -o $@ $(dtOBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o ../$@ $(dtOBJECTS) $(LDFLAGS)
 
 libmxml.a:
 	rm -rf $(MXMLVER)/
