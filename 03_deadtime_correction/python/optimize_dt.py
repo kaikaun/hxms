@@ -116,14 +116,20 @@ def main():
 	#dt = opt.brute(total_curv, ((0,10),(0,10)), args=(spectra,), Ns=100)
 
 	# Simulated annealing
-	dt,c = opt.anneal(total_curv, dt0, args=(spectra,), lower=[0,0], upper=[10.,4.], disp=True)
+	#dt,c, T, feval, iters, accept, retval = \
+	retval = \
+	opt.anneal(total_curv, dt0, args=(spectra,), lower=[0,0], upper=[10.,4.])
 
-	print
-	print "Non-extending DT: %.3f ns" % dt[0]
-	print "    Extending DT: %.3f ns" % dt[1]
-	print
-	print "Command line: deadtime -d%.3f  -D%.3f  <mzXML>" % (dt[0], dt[1])
-	print
+	#print
+	#print "Non-extending DT: %.3f ns" % dt[0]
+	#print "    Extending DT: %.3f ns" % dt[1]
+	#print
+	#print "Command line: deadtime -d%.3f  -D%.3f  <mzXML>" % (dt[0], dt[1])
+	#print
+
+	print retval
+	print 
+
 
 	return 0
 
