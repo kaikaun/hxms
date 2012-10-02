@@ -1,13 +1,15 @@
 
 # Compiled source #
 ###################
-struct
+preprocess
+deadtime
 *.com
 *.class
 *.dll
 *.exe
 *.o
 *.so
+*.a
 
 # Packages #
 ############
@@ -32,6 +34,7 @@ pdbchains
 sys_tfm
 *.aln
 *to_*.pdb
+
 
 # OS generated files #
 ######################
