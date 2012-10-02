@@ -30,4 +30,4 @@ clean:
 	rm -f *.o
 cleanall:
 	rm -rf $(MXMLVER)/
-	rm -f preprocess *.o $(LIBDIR)/libmxml.a
+	rm -f ../preprocess *.o $(LIBDIR)/libmxml.a

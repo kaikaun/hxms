@@ -30,4 +30,4 @@ clean:
 	rm -f *.o
 cleanall:
 	rm -rf $(MXMLVER)/
-	rm -f deadtime *.o $(LIBDIR)/libmxml.a
+	rm -f ../deadtime *.o $(LIBDIR)/libmxml.a
