@@ -23,7 +23,7 @@ def multi_gaussian(params):
 	return lambda pt: np.sum([gaussian(*param)(pt) for param in shaped], axis=0)
 
 def sumsquares(func):
-	return lambda params: np.sum(np.square(func(params)))
+	return lambda *params: np.sum(np.square(func(params)))
 
 def main():
 	files = [glob.glob(g) for g in sys.argv[1:]]
