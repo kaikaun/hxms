@@ -4,35 +4,8 @@
 # optimize_dt.py
 
 import argparse
-from os.path import basename
 import re
-import math
-
-def correct_deadtime(dt, pulses, prop, spectrum):
-	flight_time = lambda mz: prop * math.sqrt(mz)
-	new_spectrum = {}
-	for RT, scan in spectrum.iteritems():
-		new_scan = {}
-		for mz in sorted(scan.iterkeys()):
-			pulses_not_hit = pulses
-			pulses_blocked = 0
-			FT = flight_time(mz)
-			for mz2 in sorted(new_scan.iterkeys(), reverse=True):
-				FT_diff = FT - flight_time(mz2)
-				if FT_diff > dt[0]*1e-9:
-					break
-				if FT_diff > dt[1]*1e-9:
-					pulses_not_hit -= scan[mz2]
-				else:
-					pulses_blocked += new_scan[mz2]
-			new_I = scan[mz]*math.exp(pulses_blocked / pulses) / pulses_not_hit
-			if new_I > 1:
-				print "Invalid peak values for deadtime correction!"
-				return -2
-			new_I = -math.log(1 - new_I) * pulses
-			new_scan[mz] = new_I
-		new_spectrum[RT] = new_scan
-	return new_spectrum
+from TOFMS_deadtime import correct_deadtime
 
 def main():
 	parser = argparse.ArgumentParser(description='Correct clusters for deadtime.')
@@ -54,14 +27,13 @@ def main():
 
 	dt = [args.ext,args.non]
 	pulses = args.ST / (args.CT * 1E-6)
-	prop = (args.L * 1E-3) / math.sqrt(2 * 96485333.7 * args.V)
+	prop = (args.L * 1E-3) / (2 * 96485333.7 * args.V)**0.5
 
-	filenames = args.clusters
 	try:
-		with open(filenames, 'r') as inf:
+		with open(args.clusters, 'r') as inf:
 			files = sum([line.rstrip().split(" ") for line in inf],[])
 	except IOError:
-		print "error opening ", filenames
+		print "error opening ", args.clusters
 		return -1
 
 	lre = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')

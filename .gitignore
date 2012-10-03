@@ -10,6 +10,7 @@ deadtime
 *.o
 *.so
 *.a
+*.pyc
 
 # Packages #
 ############
