@@ -19,8 +19,9 @@ def correct_deadtime(dt, pulses, prop, spectrum):
 					pulses_blocked += new_scan[mz2]
 			new_I = scan[mz]*math.exp(pulses_blocked / pulses) / pulses_not_hit
 			if new_I > 1:
-				print "Invalid peak values for deadtime correction!"
-				return -2
+				except_msg = "Log underflow due to invalid peak values"
+				print except_msg
+				raise ValueError, except_msg
 			new_I = -math.log(1 - new_I) * pulses
 			new_scan[mz] = new_I
 		new_spectrum[RT] = new_scan
