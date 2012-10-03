@@ -28,6 +28,9 @@ def curvature(p, t):
 	mz2 = 2 * p[2] + 6 * p[3] * t
 	return mz2 / ((1 + mz1**2)**1.5)
 
+def flight_time(mz):
+	return prop * math.sqrt(mz)
+
 def spectrum_curvature(spectrum):
 	mz = [np.average(s.keys(),weights=s.values()) for s in spectrum.values()]
 	mz = np.array(mz)
@@ -36,12 +39,7 @@ def spectrum_curvature(spectrum):
 	params = opt.leastsq(residuals, p0, args=(mz, t))
 	return curvature(params[0], t)
 
-def total_curv(dt, spectra):
-	curv = [np.sum(spectrum_curvature(correct_deadtime(dt,s))) for s in spectra]
-	return np.sum(np.abs(curv))
-
 def correct_deadtime(dt, spectrum):
-	flight_time = lambda mz: prop * math.sqrt(mz)
 	new_spectrum = {}
 	for RT, scan in spectrum.iteritems():
 		new_scan = {}
@@ -67,6 +65,10 @@ def correct_deadtime(dt, spectrum):
 		new_spectrum[RT] = new_scan
 	return new_spectrum
 
+def total_curv(dt, spectra):
+	curv = [np.sum(spectrum_curvature(correct_deadtime(dt,s))) for s in spectra]
+	return np.sum(np.abs(curv))
+
 def main():
 
 	if ( len(sys.argv) <= 1 ):
@@ -80,26 +82,53 @@ def main():
 		print "error opening ", filenames
 		return -1
 
-	files = sum([line.rstrip().split(" ") for line in inf],[])
+	files      = []
+	for line in inf:
+		line.rstrip()
+		whatever = line.split(" ")
+		files.append(whatever[0])
+
 
 	spectra = []
 	lre = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')
 	for file in files:
 		spectrum={}
-		with open(file, 'r') as f:
-			for line in f:
-				res = lre.search(line)
-				if res:
-					RT = float(res.group(2))
-					if RT not in spectrum:
-						spectrum[RT] = {}
-					spectrum[RT][float(res.group(3))] = float(res.group(4))
+		f = open(file, 'r')
+		for line in f:
+			res = lre.search(line)
+			if res:
+				RT = float(res.group(2))
+				if RT not in spectrum:
+					spectrum[RT] = {}
+				spectrum[RT][float(res.group(3))] = float(res.group(4))
+		f.close()
 		for RT, scan in spectrum.copy().iteritems():
 			if len(scan) < min_len or max(scan.values()) < min_I:
 				del spectrum[RT]
 		if len(spectrum) >= min_scans:
 			spectra.append(spectrum)
 
+	# Constrained COBYLA 
+	#cons = [lambda dt,sp: dt[1], lambda dt,sp: dt[0]-dt[1]]
+	#dt, c = opt.fmin_cobyla(total_curv, dt0, cons, rhobeg=4, args=(spectra,))
+
+	# Brute force search
+	#dt = opt.brute(total_curv, ((0,10),(0,10)), args=(spectra,), Ns=100)
+
+	# Simulated annealing
+	#dt,c, T, feval, iters, accept, retval = \
+	retval = \
+	opt.anneal(total_curv, dt0, args=(spectra,), lower=[0,0], upper=[10.,4.])
+
+	#print
+	#print "Non-extending DT: %.3f ns" % dt[0]
+	#print "    Extending DT: %.3f ns" % dt[1]
+	#print
+	#print "Command line: deadtime -d%.3f  -D%.3f  <mzXML>" % (dt[0], dt[1])
+	#print
+
+	print retval
+	print 
 
 
 	return 0
