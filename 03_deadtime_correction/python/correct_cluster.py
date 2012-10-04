@@ -4,6 +4,7 @@
 # optimize_dt.py
 
 import argparse
+import os
 import re
 from TOFMS_deadtime import correct_deadtime
 
@@ -11,6 +12,8 @@ def main():
 	parser = argparse.ArgumentParser(description='Correct clusters for deadtime.')
 	parser.add_argument('clusters', 
 						help='file containing cluster filenames')
+	parser.add_argument('outputdir', 
+						help='directory to write corrected clusters to')
 	parser.add_argument('-d','--ext', dest='ext', type=float, default=5., 
 						help='extending deadtime (ns)')
 	parser.add_argument('-D','--non', dest='non', type=float, default=0., 
@@ -31,9 +34,15 @@ def main():
 
 	try:
 		with open(args.clusters, 'r') as inf:
-			files = sum([line.rstrip().split(" ") for line in inf],[])
+			files = [line.split()[0] for line in inf]
 	except IOError:
 		print "error opening ", args.clusters
+		return -1
+
+	try:
+		os.mkdir(args.outputdir)
+	except OSError:
+		print args.outputdir, " already exists"
 		return -1
 
 	lre = re.compile('(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)')
@@ -53,7 +62,8 @@ def main():
 		except IOError:
 			next
 		spectrum = correct_deadtime(dt,pulses,prop,spectrum)
-		with open(file + '.corr', 'w') as f:
+		outputfilename = os.path.join(args.outputdir, os.path.basename(file))
+		with open(outputfilename, 'w') as f:
 			for RT, scan in sorted(spectrum.iteritems()):
 				for mz, I in sorted(scan.iteritems()):
 					f.write("%s %.3f %.3f %.3f\n" % (scannums[RT],RT,mz,I))
