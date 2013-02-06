@@ -33,8 +33,8 @@ def main():
 	prop = (args.L * 1E-3) / (2 * 96485333.7 * args.V)**0.5
 
 	try:
-		with open(args.clusters, 'r') as inf:
-			files = [line.split()[0] for line in inf]
+		inf =  open(args.clusters, 'r')
+		files = [line.split()[0] for line in inf]
 	except IOError:
 		print "error opening ", args.clusters
 		return -1
@@ -50,23 +50,23 @@ def main():
 		spectrum={}
 		scannums={}
 		try:
-			with open(file, 'r') as f:
-				for line in f:
-					res = lre.search(line)
-					if res:
-						RT = float(res.group(2))
-						if RT not in spectrum:
-							spectrum[RT] = {}
-						spectrum[RT][float(res.group(3))] = float(res.group(4))
-						scannums[RT] = res.group(1)
+			f = open(file, 'r') 
+			for line in f:
+				res = lre.search(line)
+				if res:
+					RT = float(res.group(2))
+					if RT not in spectrum:
+						spectrum[RT] = {}
+					spectrum[RT][float(res.group(3))] = float(res.group(4))
+					scannums[RT] = res.group(1)
 		except IOError:
 			next
 		spectrum = correct_deadtime(dt,pulses,prop,spectrum)
 		outputfilename = os.path.join(args.outputdir, os.path.basename(file))
-		with open(outputfilename, 'w') as f:
-			for RT, scan in sorted(spectrum.iteritems()):
-				for mz, I in sorted(scan.iteritems()):
-					f.write("%s %.3f %.3f %.3f\n" % (scannums[RT],RT,mz,I))
+		f =  open(outputfilename, 'w')
+		for RT, scan in sorted(spectrum.iteritems()):
+			for mz, I in sorted(scan.iteritems()):
+				f.write("%s %.3f %.3f %.3f\n" % (scannums[RT],RT,mz,I))
 
 	return 0
 

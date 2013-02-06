@@ -35,9 +35,9 @@ def main():
 				description='Find optimized deadtime for clusters.')
 	parser.add_argument('clusters', 
 						help='file containing cluster filenames')
-	parser.add_argument('-d','--ext', dest='ext', type=float, default=5., 
+	parser.add_argument('-d','--ext', dest='ext', type=float, default=3., 
 						help='initial guess for extending deadtime (ns)')
-	parser.add_argument('-D','--non', dest='non', type=float, default=1., 
+	parser.add_argument('-D','--non', dest='non', type=float, default=5., 
 						help='initial guess for non-extending deadtime (ns)')
 	parser.add_argument('-s','--scantime', dest='ST', type=float, default=0.23, 
 						help='scan time (s)')
@@ -55,13 +55,13 @@ def main():
 						help='minimum spectrum length in scans')
 	args = parser.parse_args()
 
-	dt0 = np.array([args.ext,args.non])
+	dt0 = np.array([args.non,args.ext])
 	pulses = args.ST / (args.CT * 1E-6)
 	prop = (args.L * 1E-3) / (2 * 96485333.7 * args.V)**0.5
 
 	try:
-		with open(args.clusters, 'r') as inf:
-			files = sum([line.rstrip().split(" ") for line in inf],[])
+		inf   = open(args.clusters, 'r')
+		files = sum([line.rstrip().split(" ") for line in inf],[])
 	except IOError:
 		print "error opening ", args.clusters
 		return -1
