@@ -12,12 +12,13 @@ $column     = 0;
 (@ARGV>2)  &&  ($column = $ARGV[2]);
 
 
-(-e $outdirname) && 
-    die "$outdirname already exists; please remove or rename.\n";
+#(-e $outdirname) && 
+#    die "$outdirname already exists; please remove or rename.\n";
 
 open (IF, "<$filename" ) 
     || die "Cno $filename: $!.\n";
 
+($scan, $retT, $mz, $int)  = ();
 
 while ( <IF> ) {
 
@@ -37,14 +38,16 @@ while ( <IF> ) {
 	die "CNo blah.gscr.\n";
     print OF "unset key \n";
     print OF "set pm3d map \n";
+    print OF 'set format x "%10.1f'."\n";
     print OF 'set format y "%10.3f'."\n";
-    print OF "set xlabel \"SCAN NUMBER\"\n";
+    #print OF "set xlabel \"SCAN NUMBER\"\n";
+    print OF "set xlabel \"Retention Time (s)\"\n";
     print OF "set ylabel \"M/Z\" \n";
     print OF "set title \"CLUSTER $clust_number\" \n";
     print OF 'set palette  defined (0 "white", 300 "blue", 1000 "red", 1200 "yellow")'."\n";
     print OF "set term post color\n";
     print OF "set out '$clust_number.post'\n";
-    print OF "splot '$name' using 1:3:4 with points ps 1 pt 7 palette\n";
+    print OF "splot '$name' using 2:3:4 with points ps 1 pt 7 palette\n";
     close OF;
    
     $cmd = "gnuplot blah.gscr";
@@ -55,11 +58,18 @@ while ( <IF> ) {
     }
 
     (-e $outdirname) || `mkdir $outdirname`;
-    $cmd = "ps2pdf $clust_number.post $outdirname/$clust_number.pdf";
+
+    $ret = `head -n1 $name`;
+    chomp $ret;
+    ($scan, $retT, $mz, $int) = split " ", $ret;
+
+
+    $outfile =  sprintf ("m_%.2f_t_%d.pdf", $mz, $retT);
+
+    $cmd     = "ps2pdf $clust_number.post $outdirname/$outfile";
     (system $cmd ) && die "Error runnning $cmd.\n";
     (-e "$clust_number.post") && `rm $clust_number.post`;
 
-    print "wrote $outdirname/$clust_number.pdf\n";
 
 }
 
