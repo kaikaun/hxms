@@ -8,7 +8,7 @@
 
 $filename   = $ARGV[0];
 $outdirname = $ARGV[1];
-$column	 = 1;
+$column	 = 0;
 (@ARGV>2)  &&  ($column = $ARGV[2]);
 
 (-e $outdirname) &&
@@ -21,6 +21,7 @@ while ( <IF> ) {
 	chomp;
 	@aux  = split;
 	$name = $aux[$column];
+	
 
 	(-e $name) || next;
 	($name =~ /clust/ ) || next;
