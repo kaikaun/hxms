@@ -1,9 +1,9 @@
 \documentclass[10pt]{scrartcl}
 
-\usepackage[margin=3.0cm]{geometry}                % See geometry.pdf to learn the layout options. There are lots.
-\geometry{letterpaper}                   % ... or a4paper or a5paper or ... 
-%\geometry{landscape}                % Activate for for rotated page geometry
-%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage[margin=3.0cm]{geometry} % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}         % ... or a4paper or a5paper or ... 
+%\geometry{landscape}          % Activate for for rotated page geometry
+\usepackage[parfill]{parskip}  % Activate to begin paragraphs with an empty line rather than an indent
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -11,7 +11,7 @@
 \usepackage{verbatim}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 
-\title{Working title: An iterative data processing  pipeline for increased peptide coverage in an HX-MS experiment}
+\title{Working title: An iterative data processing pipeline for increased peptide coverage in HX-MS experiment}
 \author{AA Khoo, S Moorthy, S Krishnamurthy, G Anand, and I Mihalek}
           
 \begin{document}
@@ -23,8 +23,41 @@
 
 
 \section{Overview}
-\section{Methods}
 
+
+\section{Methods}
+The raw data is produced by a Waters Q-Tof micro mass spectrometer in MS\textsuperscript{E} mode, which alternates between high and low collision energies on odd and even scans. The data in mzXML format is first sent through a custom preprocessor. Readings outside the retention times and m/z ratios of interest are dropped, then calibration, odd and even numbered scans seperated into different files. Each file is processed seperately by the pipeline.
+
+\subsection{Clustering}
+The spectrum is first divided into clusters, each containing preferably only one peak. This is potentially very slow due to the hundreds of millions of points in a typical raw spectrum. We elected to use a fast connectivity-based clustering approach. We ignored the intensity of each point, and simply placed two points in the same cluster if the difference between their m/z and retention times (RT) were within user-supplied limits. These limits were chosen based on the properties of the instrument. Clusters with too few points or too low an intensity were then eliminated as noise.
+
+This approach, while extremely fast, produced clusters that sometimes contained more than one peak where different peaks overlapped or touched. This drawback is dealt with during Gaussian fitting.
+
+\subsection{TOF deadtime correction}
+The time-to-digital conversion systems used in TOF mass spectrometry are subject to extending and non-extending deadtimes \cite{}. Ions that strike the detector within the deadtime after the previous ion strike are not recorded. An extending deadtime begins anew with each subsequent non-recorded ion strike, while a non-extending deadtime does not.
+
+This form of detector saturation is most severe at high ion intensities, i.e. the highest and most important peaks in a scan. It lowers both the detected intensity and the apparent m/z of the peak. On a spectrum of multiple scans over time, this produces curved peaks, since the scans in the middle have the highest intensities and have their peak m/z lowered the most from the true value.
+
+While the literature has several methods for correcting for the effect of deadtime \cite{}, simulation revealed that they are inaccurate at high intensities. We elected to derive our own from first principles using Poisson statistics. For an instrument with an extending deadtime $\tau_{e}$ occurring in series before a longer non-extending deadtime $\tau_{ne}$, such that $t_{ne}>t_e$, the corrected intensity $I_i'$ of period $i$ in a scan is given by
+\begin{equation}
+I_i'=-N\ln{\left(1-\frac{I_i\exp{\left(\frac{\sum_{j=i-t_e}^{i-1}I_j'}{N}\right)}}{N-\sum_{j=i-t_{ne}}^{i-t_e-1}I_j}\right)},
+\end{equation}
+where $I_i$ is the uncorrected intensity of period $i$ and $N$ is the maximum possible intensity (i.e. the number of acceleration pulses).
+
+To apply this equation to a scan, we require $\tau_{e}$, $\tau_{ne}$, $N$ and, in practice, a constant of proportionality $C$ to allow us to convert between m/z ratios and times of flight ($TOF=C\sqrt{m/z}$). While $N$ and $C$ can be derived from instrument settings, $\tau_{e}$ and $\tau_{ne}$ are unknown properties of the instrument that can change slowly over time.
+
+To find these two unknown parameters, we treat this as a optimization problem, where the goal is to minimize the curvature of the corrected peaks in the spectrum. Our program chooses a user-provided number of clusters with the highest peak intensities, which are the most affected by deadtime. These clusters are corrected using different sets of parameters until the sum of the curvatures of the lines formed by the maxima of each scan is minimized. We search the parameter space using constrained simulated annealing. The optimized set of parameters is then used to correct the entire spectrum.
+
+The optimization process is generally very quick, provided the user specifies a reasonable number of clusters for analysis (ten is generally enough), since only a tiny fraction of the spectrum is processed. This technique worked even when clusters contained more than one peak, since only the maximum of each scan is used.
+
+While only two parameters need to be found in principle, we found that the values of $N$ and $C$ are known with poor precision in practice. The best result came from optimizing for all these values in a four-parameter model. After correction, we obtained peaks with consistent m/z between scans that corresponded accurately to known fragments and corrected intensities that could be used with confidence.
+
+\subsection{Gaussian fitting}
+Each deadtime-corrected cluster is then subjected to mean shift clustering \cite{} to determine the number of peaks it contains and the likely center of each peak. We used the implementation in scikit-learn \cite{}.
+
+We modelled each cluster as a set of 2D Gaussians aligned along the RT axis. Each Gaussian was described by five parameters (m/z and RT coordinates of the center, intensity at the center, and spreads in the m/z and RT directions), giving us a $5n$-parameter surface fitting problem. The clusters found by mean shift clustering were used to determine the number of Gaussians and the initial guesses for their centers. The initial guesses for the intensities of the Gaussians were the intensities of the nearest points in the spectrum, while those for the spreads were static preset values. Fitting was performed using Levenberg-Marquardt optimization.
+
+This step is fast and parallelizable since each cluster is small and seperate. The final 2D gaussians were treated as individual isotope peaks. 
 
 \bibliographystyle{plos2009}
 \bibliography{hexed} 
