@@ -1,0 +1,4 @@
+note # if  pragma on line 46
+- some compilers have different preferences for the library
+
+g++ Isotopic-Fast-Profiles.cpp -o isotopic-fast-profiles -Wno-deprecated
